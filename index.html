@@ -266,14 +266,23 @@
         <div class="flex-1 overflow-y-auto py-4 space-y-4 pr-1 text-sm">
           
           <!-- Quick Reference Specs Grid -->
-          <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="grid grid-cols-3 gap-2 text-xs">
             <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
               <span class="text-slate-400 block text-[10px] uppercase tracking-wider font-bold">Terminal Sector</span>
-              <strong id="modal-sector" class="text-slate-200 text-xs mt-0.5 block">West End Area</strong>
+              <strong id="modal-sector" class="text-slate-200 text-xs mt-0.5 block truncate">West End Area</strong>
             </div>
             <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
               <span class="text-slate-400 block text-[10px] uppercase tracking-wider font-bold">Primary Purpose</span>
-              <strong id="modal-purpose" class="text-slate-200 text-xs mt-0.5 block">Operational Shop</strong>
+              <strong id="modal-purpose" class="text-slate-200 text-xs mt-0.5 block truncate">Operational Shop</strong>
+            </div>
+            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+              <span class="text-slate-400 block text-[10px] uppercase tracking-wider font-bold">Phone / Contact</span>
+              <div id="modal-phone-container" class="mt-0.5">
+                <a id="modal-phone-link" href="#" class="text-amber-400 hover:underline font-bold text-xs flex items-center gap-1 truncate">
+                  <i data-lucide="phone" class="w-3 h-3 shrink-0"></i>
+                  <span id="modal-phone">446-XXXX</span>
+                </a>
+              </div>
             </div>
           </div>
 
@@ -393,51 +402,51 @@
     // MASTER DATASET: 45 NORFOLK TERMINAL BUILDINGS & FACILITY DETAILS
     // -------------------------------------------------------------------
     const BUILDINGS_DATA = [
-      { id: 1, name: "Superintendent's Office Building", category: "Administration & Headquarters", sector: "Central Admin Sector", ppe: ["Standard Terminal Attire", "Safety Glasses"], desc: "Primary administrative headquarters for Norfolk Terminal operations, dispatch management, and division leadership." },
-      { id: 2, name: "MW&S Headquarters (REA)", category: "Administration & Headquarters", sector: "Central Admin Sector", ppe: ["Hard Hat", "Safety Glasses", "High-Vis Vest"], desc: "Maintenance of Way & Structures headquarters. Manages track inspection, bridge maintenance, and structural engineering crews." },
-      { id: 3, name: "West End Yard Office", category: "Yard Operations & Towers", sector: "West End Yard", ppe: ["Hard Hat", "Steel Toe Boots", "High-Vis Vest"], desc: "Field dispatch office governing train movement, crew callings, and switching assignments for the West End rail yard." },
-      { id: 4, name: "West End Tower", category: "Yard Operations & Towers", sector: "West End Yard", ppe: ["Hard Hat", "Steel Toe Boots", "High-Vis Vest"], desc: "Elevated control tower overseeing West End interlocking switches, car routing, and train movements." },
-      { id: 5, name: "Diesel Shop", category: "Mechanical & Equipment Shops", sector: "Central Shops", ppe: ["Hard Hat", "Steel Toe Boots", "Hearing Protection", "Eye Protection"], desc: "Heavy locomotive maintenance facility equipped with overhead cranes, drop tables, and fueling bays." },
-      { id: 6, name: "Oil House", category: "Storage, Oil Houses & Utilities", sector: "Central Shops", ppe: ["Hard Hat", "Respirator/Mask", "Chemical Gloves", "Steel Toe Boots"], desc: "Bulk lubricant, oil storage, and distribution hub for terminal mechanical equipment and locomotives." },
-      { id: 7, name: "Roadway Equipment Shop", category: "Mechanical & Equipment Shops", sector: "Central Shops", ppe: ["Hard Hat", "Steel Toe Boots", "Eye Protection"], desc: "Maintenance facility for track tampers, ballast regulators, tie replacers, and MOW highway vehicles." },
-      { id: 8, name: "Wastewater Treatment Building", category: "Storage, Oil Houses & Utilities", sector: "Environmental / Utilities", ppe: ["Hard Hat", "Chemical Apron/Gloves", "Eye Protection"], desc: "Industrial runoff and oil-water separator treatment plant processing terminal wash water and environmental drainage." },
-      { id: 9, name: "C&S Storage Facility", category: "Storage, Oil Houses & Utilities", sector: "Central Storage", ppe: ["Hard Hat", "Steel Toe Boots"], desc: "Communications & Signals warehouse housing relays, crossing gates, signal heads, and fiber network components." },
-      { id: 10, name: "Carpenter Shop", category: "Mechanical & Equipment Shops", sector: "Central Shops", ppe: ["Hard Hat", "Hearing Protection", "Eye Protection"], desc: "Woodworking and structural timber shop supporting pier decking, wooden trestles, and facility repairs." },
-      { id: 11, name: "Paint Shop", category: "Mechanical & Equipment Shops", sector: "Central Shops", ppe: ["Respirator", "Eye Protection", "Chemical Suit"], desc: "Industrial spray booth and paint application shop for equipment, signs, and structural steel corrosion protection." },
-      { id: 12, name: "Welding Shop", category: "Mechanical & Equipment Shops", sector: "Central Shops", ppe: ["Welding Helmet", "Leather Gloves", "Steel Toe Boots", "Hearing Protection"], desc: "Heavy fabrication and rail welding shop handling frog repairs, structural steel, and custom metalwork." },
-      { id: 13, name: "Tin Shop", category: "Mechanical & Equipment Shops", sector: "Central Shops", ppe: ["Cut-Resistant Gloves", "Eye Protection", "Steel Toe Boots"], desc: "Sheet metal fabrication and ductwork shop for facility HVAC, locomotive cabs, and custom enclosures." },
-      { id: 14, name: "Line Gang Quonset Hut", category: "Maintenance of Way & Field Gangs", sector: "Field Operations", ppe: ["Electrical PPE", "Hard Hat", "High-Vis Vest"], desc: "Base of operations for electrical overhead line crews, catenary repair, and high-voltage substation maintenance teams." },
-      { id: 15, name: "Coal Pier Mechanical Shop (86)", category: "Mechanical & Equipment Shops", sector: "Coal Pier Area", ppe: ["Hard Hat", "Steel Toe Boots", "Hearing Protection"], desc: "Dedicated mechanical shop servicing Coal Pier conveyor systems, rotary dumpers, and chute loaders." },
-      { id: 16, name: "Henley's Barn (Equipment Storage)", category: "Storage, Oil Houses & Utilities", sector: "South Storage Zone", ppe: ["Hard Hat", "Steel Toe Boots"], desc: "Covered storage barn for heavy track machinery, off-season equipment, and bulk MOW materials." },
-      { id: 17, name: "Substation", category: "Storage, Oil Houses & Utilities", sector: "Terminal Utilities", ppe: ["High Voltage Arc Flash Suit", "Hard Hat", "Insulated Gloves"], desc: "Main terminal electrical substation converting utility power for pier machinery, yard lighting, and shops." },
-      { id: 18, name: "Piermaster's Office and Scales", category: "Administration & Headquarters", sector: "Coal Pier Area", ppe: ["Hard Hat", "High-Vis Vest", "Steel Toe Boots"], desc: "Operational center for vessel loading coordination, coal weight certified scales, and maritime shipping logs." },
-      { id: 19, name: "Pent House", category: "Coal Pier & Barney Yard Infrastructure", sector: "Coal Pier Infrastructure", ppe: ["Hard Hat", "Harness/Fall Protection", "Steel Toe Boots"], desc: "Elevated drive housing atop the coal conveyor structure containing main drive motors and cable drums." },
-      { id: 20, name: "South Barney Yard Tower", category: "Yard Operations & Towers", sector: "Barney Yard", ppe: ["Hard Hat", "High-Vis Vest", "Steel Toe Boots"], desc: "Operational control tower managing southern car-pusher (barney) operations and thaw shed feeding." },
-      { id: 21, name: "North Barney Yard Tower", category: "Yard Operations & Towers", sector: "Barney Yard", ppe: ["Hard Hat", "High-Vis Vest", "Steel Toe Boots"], desc: "Control tower supervising northern barney yard sorting tracks and conveyor feeder positioning." },
-      { id: 22, name: "Barney Yard Meeting Room", category: "Administration & Headquarters", sector: "Barney Yard", ppe: ["Standard Terminal Attire"], desc: "Crew briefing facility, safety room, and shift change assembly hall for Barney Yard operations." },
-      { id: 23, name: "South Thaw Shed", category: "Coal Pier & Barney Yard Infrastructure", sector: "Barney Yard", ppe: ["Hard Hat", "Heat-Resistant Gear", "Eye Protection"], desc: "Infrared gas heating shed designed to thaw frozen coal in hopper cars during winter operations prior to dumping." },
-      { id: 24, name: "North Thaw Shed", category: "Coal Pier & Barney Yard Infrastructure", sector: "Barney Yard", ppe: ["Hard Hat", "Heat-Resistant Gear", "Eye Protection"], desc: "Northern infrared thaw facility providing high-volume rail car heating in cold weather conditions." },
-      { id: 25, name: "Dumper Structure", category: "Coal Pier & Barney Yard Infrastructure", sector: "Coal Pier Area", ppe: ["Hard Hat", "Hearing Protection", "Respirator", "Fall Protection"], desc: "Heavy tandem rotary car dumper that rotates coal hopper cars to unload coal onto pier transfer belts." },
-      { id: 26, name: "Coal Sampler Building", category: "Coal Pier & Barney Yard Infrastructure", sector: "Coal Pier Area", ppe: ["Hard Hat", "Dust Mask", "Eye Protection"], desc: "Automated mechanical sampling facility extracting quality test samples from coal streams during transfer." },
-      { id: 27, name: "BC House", category: "Coal Pier & Barney Yard Infrastructure", sector: "Coal Pier Area", ppe: ["Hard Hat", "Steel Toe Boots", "Hearing Protection"], desc: "Barney Conveyor junction house containing transfer chutes, belt tensioners, and speed controls." },
-      { id: 28, name: "Pipe Fitter's Building", category: "Mechanical & Equipment Shops", sector: "Central Shops", ppe: ["Hard Hat", "Steel Toe Boots", "Eye Protection"], desc: "Shop facility for terminal plumbing, steam thaw lines, hydraulic piping, and pneumatic system repairs." },
-      { id: 29, name: "Maintenance Gang Building", category: "Maintenance of Way & Field Gangs", sector: "Central Facilities", ppe: ["Hard Hat", "High-Vis Vest", "Steel Toe Boots"], desc: "HQ for terminal track maintenance gangs, turnout repair crews, and rail inspection teams." },
-      { id: 30, name: "Cable Shed", category: "Storage, Oil Houses & Utilities", sector: "Central Storage", ppe: ["Hard Hat", "Steel Toe Boots"], desc: "Storage facility housing high-voltage trailing cables, steel wire rope reels, and conveyor belting spares." },
-      { id: 31, name: "Pier 5 Oil House", category: "Storage, Oil Houses & Utilities", sector: "Pier 5 Sector", ppe: ["Hard Hat", "Chemical Gloves", "Steel Toe Boots"], desc: "Dedicated lube and hydraulic oil supply station servicing Pier 5 mechanical machinery." },
-      { id: 32, name: "Pier Parts Storage (White Elephant)", category: "Storage, Oil Houses & Utilities", sector: "Pier Storage Zone", ppe: ["Hard Hat", "Steel Toe Boots"], desc: "Large central warehouse storing heavy spare gearboxes, conveyor rollers, marine loading arms, and large castings." },
-      { id: 33, name: "Lamp House", category: "Storage, Oil Houses & Utilities", sector: "Central Utilities", ppe: ["Hard Hat", "Steel Toe Boots"], desc: "Historical and active storage facility for yard lanterns, safety flares, locomotive headlights, and portable lighting." },
-      { id: 34, name: "Silos", category: "Coal Pier & Barney Yard Infrastructure", sector: "Coal Pier Area", ppe: ["Hard Hat", "Dust Mask", "Fall Protection"], desc: "Vertical storage silos for surge capacity and blending of specific coal grades during ship loading." },
-      { id: 35, name: "Pier 6 Pump House", category: "Coal Pier & Barney Yard Infrastructure", sector: "Pier 6 Sector", ppe: ["Hard Hat", "Hearing Protection", "Steel Toe Boots"], desc: "High-capacity water pumping station for Pier 6 dust suppression sprays and fire protection loops." },
-      { id: 36, name: "TC Room", category: "Yard Operations & Towers", sector: "Operations Control", ppe: ["Standard Terminal Attire"], desc: "Train Control & Telecommunications room housing vital interlocking electronics and dispatch servers." },
-      { id: 37, name: "East End Trainman's Shack", category: "Yard Operations & Towers", sector: "East End Yard", ppe: ["Hard Hat", "High-Vis Vest", "Steel Toe Boots"], desc: "Field breakroom and reporting station for trainmen and conductors working East End yard switches." },
-      { id: 38, name: "38th St Office Building", category: "Administration & Headquarters", sector: "38th St Sector", ppe: ["Standard Terminal Attire"], desc: "Administrative and field management offices for the 38th Street rail car repair complex." },
-      { id: 39, name: "38th St Pad House", category: "Storage, Oil Houses & Utilities", sector: "38th St Sector", ppe: ["Hard Hat", "Steel Toe Boots"], desc: "Storage and preparation building for rail car journal pads, brake shoes, and truck components." },
-      { id: 40, name: "38th St Oil House", category: "Storage, Oil Houses & Utilities", sector: "38th St Sector", ppe: ["Hard Hat", "Chemical Gloves", "Steel Toe Boots"], desc: "Lubricant and solvent supply house for the 38th Street car repair tracks." },
-      { id: 41, name: "38th St Repair Building", category: "Mechanical & Equipment Shops", sector: "38th St Sector", ppe: ["Hard Hat", "Steel Toe Boots", "Eye Protection", "Hearing Protection"], desc: "Major freight car repair facility performing wheel replacements, air brake tests, and coupler overhauls." },
-      { id: 42, name: "38th St Air Building", category: "Storage, Oil Houses & Utilities", sector: "38th St Sector", ppe: ["Hard Hat", "Hearing Protection", "Steel Toe Boots"], desc: "Compressor house producing high-pressure yard air for train brake charging and pneumatic shop tools." },
-      { id: 43, name: "38th St Maintenance Gang", category: "Maintenance of Way & Field Gangs", sector: "38th St Sector", ppe: ["Hard Hat", "High-Vis Vest", "Steel Toe Boots"], desc: "Track and switch maintenance crew building servicing the 38th Street yard ladder tracks." },
-      { id: 44, name: "West End Barney Yard Carman's Shack", category: "Yard Operations & Towers", sector: "West End Yard", ppe: ["Hard Hat", "High-Vis Vest", "Steel Toe Boots"], desc: "Field inspector shack for carmen conducting safety inspections on inbound coal trains." },
-      { id: 45, name: "Pier 6 Oil House", category: "Storage, Oil Houses & Utilities", sector: "Pier 6 Sector", ppe: ["Hard Hat", "Chemical Gloves", "Steel Toe Boots"], desc: "Dedicated oil and fluid storage facility servicing Pier 6 ship loaders and conveyor drives." }
+      { id: 1, name: "Superintendent's Office Building", category: "Administration & Headquarters", sector: "Central Admin Sector", phone: "446-5427", ppe: ["Standard Terminal Attire", "Safety Glasses"], desc: "Primary administrative headquarters for Norfolk Terminal operations, dispatch management, and division leadership." },
+      { id: 2, name: "MW&S Headquarters (REA)", category: "Administration & Headquarters", sector: "Central Admin Sector", phone: "446-5412", ppe: ["Hard Hat", "Safety Glasses", "High-Vis Vest"], desc: "Maintenance of Way & Structures headquarters. Manages track inspection, bridge maintenance, and structural engineering crews." },
+      { id: 3, name: "West End Yard Office", category: "Yard Operations & Towers", sector: "West End Yard", phone: "446-5525", ppe: ["Hard Hat", "Steel Toe Boots", "High-Vis Vest"], desc: "Field dispatch office governing train movement, crew callings, and switching assignments for the West End rail yard." },
+      { id: 4, name: "West End Tower", category: "Yard Operations & Towers", sector: "West End Yard", phone: "446-5525", ppe: ["Hard Hat", "Steel Toe Boots", "High-Vis Vest"], desc: "Elevated control tower overseeing West End interlocking switches, car routing, and train movements." },
+      { id: 5, name: "Diesel Shop", category: "Mechanical & Equipment Shops", sector: "Central Shops", phone: "446-5485", ppe: ["Hard Hat", "Steel Toe Boots", "Hearing Protection", "Eye Protection"], desc: "Heavy locomotive maintenance facility equipped with overhead cranes, drop tables, and fueling bays." },
+      { id: 6, name: "Oil House", category: "Storage, Oil Houses & Utilities", sector: "Central Shops", phone: "446-5465", ppe: ["Hard Hat", "Respirator/Mask", "Chemical Gloves", "Steel Toe Boots"], desc: "Bulk lubricant, oil storage, and distribution hub for terminal mechanical equipment and locomotives." },
+      { id: 7, name: "Roadway Equipment Shop", category: "Mechanical & Equipment Shops", sector: "Central Shops", phone: "N/A", ppe: ["Hard Hat", "Steel Toe Boots", "Eye Protection"], desc: "Maintenance facility for track tampers, ballast regulators, tie replacers, and MOW highway vehicles." },
+      { id: 8, name: "Wastewater Treatment Building", category: "Storage, Oil Houses & Utilities", sector: "Environmental / Utilities", phone: "446-5486", ppe: ["Hard Hat", "Chemical Apron/Gloves", "Eye Protection"], desc: "Industrial runoff and oil-water separator treatment plant processing terminal wash water and environmental drainage." },
+      { id: 9, name: "C&S Storage Facility", category: "Storage, Oil Houses & Utilities", sector: "Central Storage", phone: "446-5435", ppe: ["Hard Hat", "Steel Toe Boots"], desc: "Communications & Signals warehouse housing relays, crossing gates, signal heads, and fiber network components." },
+      { id: 10, name: "Carpenter Shop", category: "Mechanical & Equipment Shops", sector: "Central Shops", phone: "446-5486", ppe: ["Hard Hat", "Hearing Protection", "Eye Protection"], desc: "Woodworking and structural timber shop supporting pier decking, wooden trestles, and facility repairs." },
+      { id: 11, name: "Paint Shop", category: "Mechanical & Equipment Shops", sector: "Central Shops", phone: "446-5576", ppe: ["Respirator", "Eye Protection", "Chemical Suit"], desc: "Industrial spray booth and paint application shop for equipment, signs, and structural steel corrosion protection." },
+      { id: 12, name: "Welding Shop", category: "Mechanical & Equipment Shops", sector: "Central Shops", phone: "446-5486", ppe: ["Welding Helmet", "Leather Gloves", "Steel Toe Boots", "Hearing Protection"], desc: "Heavy fabrication and rail welding shop handling frog repairs, structural steel, and custom metalwork." },
+      { id: 13, name: "Tin Shop", category: "Mechanical & Equipment Shops", sector: "Central Shops", phone: "446-5486", ppe: ["Cut-Resistant Gloves", "Eye Protection", "Steel Toe Boots"], desc: "Sheet metal fabrication and ductwork shop for facility HVAC, locomotive cabs, and custom enclosures." },
+      { id: 14, name: "Line Gang Quonset Hut", category: "Maintenance of Way & Field Gangs", sector: "Field Operations", phone: "446-5486", ppe: ["Electrical PPE", "Hard Hat", "High-Vis Vest"], desc: "Base of operations for electrical overhead line crews, catenary repair, and high-voltage substation maintenance teams." },
+      { id: 15, name: "Coal Pier Mechanical Shop (86)", category: "Mechanical & Equipment Shops", sector: "Coal Pier Area", phone: "446-5486", ppe: ["Hard Hat", "Steel Toe Boots", "Hearing Protection"], desc: "Dedicated mechanical shop servicing Coal Pier conveyor systems, rotary dumpers, and chute loaders." },
+      { id: 16, name: "Henley's Barn (Equipment Storage)", category: "Storage, Oil Houses & Utilities", sector: "South Storage Zone", phone: "446-5486", ppe: ["Hard Hat", "Steel Toe Boots"], desc: "Covered storage barn for heavy track machinery, off-season equipment, and bulk MOW materials." },
+      { id: 17, name: "Substation", category: "Storage, Oil Houses & Utilities", sector: "Terminal Utilities", phone: "446-5486", ppe: ["High Voltage Arc Flash Suit", "Hard Hat", "Insulated Gloves"], desc: "Main terminal electrical substation converting utility power for pier machinery, yard lighting, and shops." },
+      { id: 18, name: "Piermaster's Office and Scales", category: "Administration & Headquarters", sector: "Coal Pier Area", phone: "446-5535", ppe: ["Hard Hat", "High-Vis Vest", "Steel Toe Boots"], desc: "Operational center for vessel loading coordination, coal weight certified scales, and maritime shipping logs." },
+      { id: 19, name: "Pent House", category: "Coal Pier & Barney Yard Infrastructure", sector: "Coal Pier Infrastructure", phone: "446-5450", ppe: ["Hard Hat", "Harness/Fall Protection", "Steel Toe Boots"], desc: "Elevated drive housing atop the coal conveyor structure containing main drive motors and cable drums." },
+      { id: 20, name: "South Barney Yard Tower", category: "Yard Operations & Towers", sector: "Barney Yard", phone: "446-5454", ppe: ["Hard Hat", "High-Vis Vest", "Steel Toe Boots"], desc: "Operational control tower managing southern car-pusher (barney) operations and thaw shed feeding." },
+      { id: 21, name: "North Barney Yard Tower", category: "Yard Operations & Towers", sector: "Barney Yard", phone: "446-5543", ppe: ["Hard Hat", "High-Vis Vest", "Steel Toe Boots"], desc: "Control tower supervising northern barney yard sorting tracks and conveyor feeder positioning." },
+      { id: 22, name: "Barney Yard Meeting Room", category: "Administration & Headquarters", sector: "Barney Yard", phone: "446-3022", ppe: ["Standard Terminal Attire"], desc: "Crew briefing facility, safety room, and shift change assembly hall for Barney Yard operations." },
+      { id: 23, name: "South Thaw Shed", category: "Coal Pier & Barney Yard Infrastructure", sector: "Barney Yard", phone: "446-5486", ppe: ["Hard Hat", "Heat-Resistant Gear", "Eye Protection"], desc: "Infrared gas heating shed designed to thaw frozen coal in hopper cars during winter operations prior to dumping." },
+      { id: 24, name: "North Thaw Shed", category: "Coal Pier & Barney Yard Infrastructure", sector: "Barney Yard", phone: "446-5486", ppe: ["Hard Hat", "Heat-Resistant Gear", "Eye Protection"], desc: "Northern infrared thaw facility providing high-volume rail car heating in cold weather conditions." },
+      { id: 25, name: "Dumper Structure", category: "Coal Pier & Barney Yard Infrastructure", sector: "Coal Pier Area", phone: "446-5438 (5350)", ppe: ["Hard Hat", "Hearing Protection", "Respirator", "Fall Protection"], desc: "Heavy tandem rotary car dumper that rotates coal hopper cars to unload coal onto pier transfer belts." },
+      { id: 26, name: "Coal Sampler Building", category: "Coal Pier & Barney Yard Infrastructure", sector: "Coal Pier Area", phone: "446-5486", ppe: ["Hard Hat", "Dust Mask", "Eye Protection"], desc: "Automated mechanical sampling facility extracting quality test samples from coal streams during transfer." },
+      { id: 27, name: "BC House", category: "Coal Pier & Barney Yard Infrastructure", sector: "Coal Pier Area", phone: "446-5486", ppe: ["Hard Hat", "Steel Toe Boots", "Hearing Protection"], desc: "Barney Conveyor junction house containing transfer chutes, belt tensioners, and speed controls." },
+      { id: 28, name: "Pipe Fitter's Building", category: "Mechanical & Equipment Shops", sector: "Central Shops", phone: "446-5486", ppe: ["Hard Hat", "Steel Toe Boots", "Eye Protection"], desc: "Shop facility for terminal plumbing, steam thaw lines, hydraulic piping, and pneumatic system repairs." },
+      { id: 29, name: "Maintenance Gang Building", category: "Maintenance of Way & Field Gangs", sector: "Central Facilities", phone: "446-5553", ppe: ["Hard Hat", "High-Vis Vest", "Steel Toe Boots"], desc: "HQ for terminal track maintenance gangs, turnout repair crews, and rail inspection teams." },
+      { id: 30, name: "Cable Shed", category: "Storage, Oil Houses & Utilities", sector: "Central Storage", phone: "446-5486", ppe: ["Hard Hat", "Steel Toe Boots"], desc: "Storage facility housing high-voltage trailing cables, steel wire rope reels, and conveyor belting spares." },
+      { id: 31, name: "Pier 5 Oil House", category: "Storage, Oil Houses & Utilities", sector: "Pier 5 Sector", phone: "446-5486", ppe: ["Hard Hat", "Chemical Gloves", "Steel Toe Boots"], desc: "Dedicated lube and hydraulic oil supply station servicing Pier 5 mechanical machinery." },
+      { id: 32, name: "Pier Parts Storage (White Elephant)", category: "Storage, Oil Houses & Utilities", sector: "Pier Storage Zone", phone: "446-5486", ppe: ["Hard Hat", "Steel Toe Boots"], desc: "Large central warehouse storing heavy spare gearboxes, conveyor rollers, marine loading arms, and large castings." },
+      { id: 33, name: "Lamp House", category: "Storage, Oil Houses & Utilities", sector: "Central Utilities", phone: "446-5486", ppe: ["Hard Hat", "Steel Toe Boots"], desc: "Historical and active storage facility for yard lanterns, safety flares, locomotive headlights, and portable lighting." },
+      { id: 34, name: "Silos", category: "Coal Pier & Barney Yard Infrastructure", sector: "Coal Pier Area", phone: "446-5486", ppe: ["Hard Hat", "Dust Mask", "Fall Protection"], desc: "Vertical storage silos for surge capacity and blending of specific coal grades during ship loading." },
+      { id: 35, name: "Pier 6 Pump House", category: "Coal Pier & Barney Yard Infrastructure", sector: "Pier 6 Sector", phone: "446-5486", ppe: ["Hard Hat", "Hearing Protection", "Steel Toe Boots"], desc: "High-capacity water pumping station for Pier 6 dust suppression sprays and fire protection loops." },
+      { id: 36, name: "TC Room", category: "Yard Operations & Towers", sector: "Operations Control", phone: "446-5486", ppe: ["Standard Terminal Attire"], desc: "Train Control & Telecommunications room housing vital interlocking electronics and dispatch servers." },
+      { id: 37, name: "East End Trainman's Shack", category: "Yard Operations & Towers", sector: "East End Yard", phone: "446-5558", ppe: ["Hard Hat", "High-Vis Vest", "Steel Toe Boots"], desc: "Field breakroom and reporting station for trainmen and conductors working East End yard switches." },
+      { id: 38, name: "38th St Office Building", category: "Administration & Headquarters", sector: "38th St Sector", phone: "446-5576", ppe: ["Standard Terminal Attire"], desc: "Administrative and field management offices for the 38th Street rail car repair complex." },
+      { id: 39, name: "38th St Pad House", category: "Storage, Oil Houses & Utilities", sector: "38th St Sector", phone: "446-5576", ppe: ["Hard Hat", "Steel Toe Boots"], desc: "Storage and preparation building for rail car journal pads, brake shoes, and truck components." },
+      { id: 40, name: "38th St Oil House", category: "Storage, Oil Houses & Utilities", sector: "38th St Sector", phone: "446-5576", ppe: ["Hard Hat", "Chemical Gloves", "Steel Toe Boots"], desc: "Lubricant and solvent supply house for the 38th Street car repair tracks." },
+      { id: 41, name: "38th St Repair Building", category: "Mechanical & Equipment Shops", sector: "38th St Sector", phone: "446-5576", ppe: ["Hard Hat", "Steel Toe Boots", "Eye Protection", "Hearing Protection"], desc: "Major freight car repair facility performing wheel replacements, air brake tests, and coupler overhauls." },
+      { id: 42, name: "38th St Air Building", category: "Storage, Oil Houses & Utilities", sector: "38th St Sector", phone: "446-5576", ppe: ["Hard Hat", "Hearing Protection", "Steel Toe Boots"], desc: "Compressor house producing high-pressure yard air for train brake charging and pneumatic shop tools." },
+      { id: 43, name: "38th St Maintenance Gang", category: "Maintenance of Way & Field Gangs", sector: "38th St Sector", phone: "446-5576", ppe: ["Hard Hat", "High-Vis Vest", "Steel Toe Boots"], desc: "Track and switch maintenance crew building servicing the 38th Street yard ladder tracks." },
+      { id: 44, name: "West End Barney Yard Carman's Shack", category: "Yard Operations & Towers", sector: "West End Yard", phone: "446-5576", ppe: ["Hard Hat", "High-Vis Vest", "Steel Toe Boots"], desc: "Field inspector shack for carmen conducting safety inspections on inbound coal trains." },
+      { id: 45, name: "Pier 6 Oil House", category: "Storage, Oil Houses & Utilities", sector: "Pier 6 Sector", phone: "446-5486", ppe: ["Hard Hat", "Chemical Gloves", "Steel Toe Boots"], desc: "Dedicated oil and fluid storage facility servicing Pier 6 ship loaders and conveyor drives." }
     ];
 
     const CATEGORIES = [
@@ -546,6 +555,7 @@
           building.name.toLowerCase().includes(query) ||
           building.category.toLowerCase().includes(query) ||
           building.sector.toLowerCase().includes(query) ||
+          (building.phone && building.phone.toLowerCase().includes(query)) ||
           building.desc.toLowerCase().includes(query);
 
         // Category tab filter
@@ -719,6 +729,22 @@
       document.getElementById("modal-sector").textContent = b.sector;
       document.getElementById("modal-purpose").textContent = b.category.split("&")[0];
       document.getElementById("modal-description").textContent = b.desc;
+
+      // Phone link handler
+      const phoneEl = document.getElementById("modal-phone");
+      const phoneLink = document.getElementById("modal-phone-link");
+      if (b.phone && b.phone !== "NA" && b.phone !== "N/A") {
+        phoneEl.textContent = b.phone;
+        const cleanDigits = b.phone.split(' ')[0].replace(/[^0-9]/g, '');
+        phoneLink.href = `tel:${cleanDigits}`;
+        phoneLink.classList.remove("pointer-events-none", "text-slate-500");
+        phoneLink.classList.add("text-amber-400", "hover:underline");
+      } else {
+        phoneEl.textContent = "N/A";
+        phoneLink.href = "#";
+        phoneLink.classList.add("pointer-events-none", "text-slate-500");
+        phoneLink.classList.remove("text-amber-400", "hover:underline");
+      }
 
       // PPE tags
       const ppeContainer = document.getElementById("modal-ppe");
@@ -910,7 +936,7 @@
       const b = BUILDINGS_DATA.find(item => item.id === id);
       if (!b) return;
 
-      const summaryText = `Building #${b.id}: ${b.name}\nCategory: ${b.category}\nSector: ${b.sector}\nDetails: ${b.desc}`;
+      const summaryText = `Building #${b.id}: ${b.name}\nPhone: ${b.phone || 'N/A'}\nCategory: ${b.category}\nSector: ${b.sector}\nDetails: ${b.desc}`;
       
       // Fallback copy for iframe security environment
       const textarea = document.createElement('textarea');
