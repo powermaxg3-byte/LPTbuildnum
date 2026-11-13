@@ -1,19 +1,23 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Norfolk Terminal Facility Directory</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Norfolk Terminal - Facility Directory & Field Map</title>
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Norfolk Terminal & Lamberts Point Rail Yard Facility Directory, PPE Protocols, and Aerial Maps.">
   
-  <!-- iOS PWA Meta Tags -->
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Norfolk Terminal" />
-  <meta name="theme-color" content="#0f172a" />
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%23f59e0b'><rect width='512' height='512' rx='128' fill='%230f172a'/><path d='M120 360 L256 120 L392 360 Z' fill='none' stroke='%23f59e0b' stroke-width='36'/><text x='256' y='320' font-size='140' font-weight='bold' text-anchor='middle' fill='%23f8fafc'>NT</text></svg>" />
-
-  <!-- Tailwind CSS CDN -->
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Leaflet CSS for Aerial Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Leaflet JS for Aerial Map -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -21,13 +25,13 @@
         extend: {
           colors: {
             rail: {
-              50: '#fffbe6',
-              100: '#fff3b8',
-              500: '#f59e0b',
-              600: '#d97706',
-              900: '#78350f',
-              dark: '#090d16',
-              card: '#1e293b'
+              50: '#f0f4f8',
+              100: '#d9e2ec',
+              600: '#102a43',
+              800: '#0b1b2b',
+              900: '#06101e',
+              accent: '#f59e0b', // Safety Orange / Amber
+              alert: '#ef4444'
             }
           }
         }
@@ -35,1017 +39,1129 @@
     }
   </script>
 
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-
   <style>
-    /* Custom scrollbar & mobile touch optimizations */
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    -webkit-tap-highlight-color: transparent;
-    
-    .safe-top { padding-top: max(1rem, env(safe-area-inset-top)); }
-    .safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
-
-    @keyframes pulse-subtle {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.7; }
+    /* Custom Scrollbar and Map Adjustments */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
     }
-    .animate-pulse-subtle { animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    .building-map-container {
+      height: 260px;
+      width: 100%;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      z-index: 10;
+    }
+    /* Custom Marker Badge Style for Leaflet Map */
+    .custom-leaflet-badge {
+      background-color: #f59e0b;
+      color: #000;
+      font-weight: 800;
+      border: 2px solid #ffffff;
+      border-radius: 9999px;
+      padding: 2px 8px;
+      font-size: 13px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.5);
+      text-align: center;
+      white-space: nowrap;
+    }
   </style>
 </head>
-<body class="h-full flex flex-col font-sans antialiased selection:bg-amber-500 selection:text-slate-950 bg-slate-950 text-slate-100 overflow-x-hidden">
 
-  <!-- APP CONTAINER -->
-  <div id="app" class="flex-1 flex flex-col max-w-md md:max-w-4xl mx-auto w-full min-h-screen relative pb-20">
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col pb-16 selection:bg-amber-500 selection:text-black">
 
-    <!-- HEADER / TOP NAV -->
-    <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 safe-top px-4 py-3 transition-all">
-      <div class="flex items-center justify-between gap-2 mb-3">
-        <div class="flex items-center space-x-2.5">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-lg shadow-amber-500/20 text-slate-950 font-black text-xl tracking-tighter">
-            NT
-          </div>
-          <div>
-            <h1 class="font-bold text-base tracking-tight leading-tight text-white flex items-center gap-1.5">
-              Norfolk Terminal
-              <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                45 SITES
-              </span>
-            </h1>
-            <p class="text-xs text-slate-400 font-medium">Facility & Building Directory</p>
-          </div>
+  <!-- Header Section -->
+  <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur border-b border-slate-800 shadow-lg px-4 py-3">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-slate-950 font-black text-xl shadow-md">
+          <i class="fa-solid fa-train-subway"></i>
         </div>
-
-        <div class="flex items-center space-x-1.5">
-          <!-- Touch Keypad Toggle Button -->
-          <button id="btn-open-numpad" title="Numeric Quick Finder" class="p-2.5 rounded-xl bg-slate-800 text-amber-400 hover:bg-slate-700 border border-slate-700 active:scale-95 transition">
-            <i data-lucide="calculator" class="w-5 h-5"></i>
-          </button>
-          
-          <!-- View Toggle Button (Grid/Compact/Map) -->
-          <button id="btn-toggle-view" title="Toggle Layout" class="p-2.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 active:scale-95 transition">
-            <i id="view-icon" data-lucide="layout-grid" class="w-5 h-5"></i>
-          </button>
-
-          <!-- PWA Install Button (Dynamic) -->
-          <button id="btn-pwa-install" class="hidden p-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold hover:bg-amber-400 active:scale-95 transition shadow-lg shadow-amber-500/20" title="Install App">
-            <i data-lucide="download" class="w-5 h-5"></i>
-          </button>
+        <div>
+          <h1 class="font-black text-lg sm:text-xl tracking-tight text-white leading-tight">NORFOLK TERMINAL</h1>
+          <p class="text-xs text-amber-400 font-medium">Lamberts Point Yard & Facility Directory</p>
         </div>
       </div>
 
-      <!-- SEARCH INPUT & QUICK CLEAR -->
-      <div class="relative flex items-center">
-        <i data-lucide="search" class="w-5 h-5 absolute left-3.5 text-slate-400 pointer-events-none"></i>
-        <input 
-          type="text" 
-          id="search-input" 
-          placeholder="Search building # or name (e.g. 15, Dumper, Tower)..." 
-          class="w-full bg-slate-950 text-slate-100 placeholder-slate-500 text-sm rounded-xl pl-11 pr-10 py-3 border border-slate-800 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition shadow-inner"
-          autocomplete="off"
-        />
-        <button id="btn-clear-search" class="hidden absolute right-3 text-slate-400 hover:text-slate-200 p-1">
-          <i data-lucide="x-circle" class="w-5 h-5"></i>
+      <!-- Header Action Buttons -->
+      <div class="flex items-center space-x-2">
+        <button onclick="toggleKeypadModal()" class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 transition flex items-center gap-1.5 text-xs font-bold" title="Quick Keypad Dial">
+          <i class="fa-solid fa-[#calc] fa-calculator text-sm"></i>
+          <span class="hidden sm:inline">Keypad</span>
+        </button>
+        <button onclick="toggleBookmarksFilter()" id="bookmark-filter-btn" class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition flex items-center gap-1.5 text-xs font-bold">
+          <i class="fa-solid fa-bookmark text-amber-400"></i>
+          <span class="hidden sm:inline">Saved</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 py-4 w-full flex-grow flex flex-col gap-4">
+    
+    <!-- Quick Search & Filter Controls -->
+    <section class="space-y-3">
+      <div class="relative">
+        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input type="text" id="search-input" placeholder="Search by building #, name, zone, or phone..." 
+               class="w-full pl-11 pr-10 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 shadow-inner text-sm sm:text-base">
+        <button id="clear-search-btn" onclick="clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1">
+          <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <!-- CATEGORY SCROLLABLE TABS -->
-      <nav class="flex items-center space-x-2 overflow-x-auto no-scrollbar pt-3 pb-1 -mx-4 px-4 border-t border-slate-800/60 mt-3" id="category-tabs">
-        <!-- Injected dynamically -->
-      </nav>
-    </header>
+      <!-- Zone Category Pills -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs font-medium" id="category-pills">
+        <!-- Dynamically Generated -->
+      </div>
+    </section>
 
-    <!-- MAIN CONTENT AREA -->
-    <main class="flex-1 px-4 pt-4">
+    <!-- Stats Bar -->
+    <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+      <span id="results-count">Showing 45 Buildings</span>
+      <span class="text-slate-500"><i class="fa-solid fa-satellite-dish text-amber-400 mr-1"></i>Lamberts Point Yard Coverage</span>
+    </div>
+
+    <!-- Building Cards Grid -->
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="buildings-grid">
+      <!-- Dynamically Rendered -->
+    </section>
+
+    <!-- Empty State -->
+    <div id="empty-state" class="hidden flex-col items-center justify-center py-16 text-center text-slate-400">
+      <i class="fa-solid fa-building-circle-xmark text-5xl mb-3 text-slate-600"></i>
+      <h3 class="text-base font-bold text-white">No Buildings Found</h3>
+      <p class="text-xs text-slate-400 mt-1 max-w-xs">Check your search query or clear the active zone filters to view all 45 terminal buildings.</p>
+      <button onclick="resetFilters()" class="mt-4 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-lg shadow">Reset Filters</button>
+    </div>
+  </main>
+
+  <!-- ================= DETAILS MODAL WITH AERIAL MAP ================= -->
+  <div id="details-modal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
       
-      <!-- SUB-HEADER BAR: STATS & SEARCH QUERY BRIEF -->
-      <div class="flex items-center justify-between mb-3 text-xs text-slate-400 font-medium">
-        <div id="results-count">Showing 45 of 45 buildings</div>
+      <!-- Modal Header -->
+      <div class="px-5 py-4 border-b border-slate-800 flex items-start justify-between bg-slate-900/90 sticky top-0 z-20">
         <div class="flex items-center space-x-3">
-          <button id="btn-filter-favorites" class="flex items-center space-x-1 hover:text-amber-400 transition">
-            <i data-lucide="star" class="w-3.5 h-3.5 text-amber-400"></i>
-            <span id="fav-count-label">Favorites (0)</span>
-          </button>
+          <span id="modal-building-badge" class="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 font-black text-lg flex items-center justify-center shadow">
+            --
+          </span>
+          <div>
+            <h2 id="modal-building-name" class="font-bold text-base sm:text-lg text-white leading-snug">Building Name</h2>
+            <p id="modal-building-zone" class="text-xs text-amber-400 font-medium">Zone Category</p>
+          </div>
         </div>
-      </div>
-
-      <!-- MAP VIEW (CONTAINER - HIDDEN BY DEFAULT) -->
-      <div id="map-view-container" class="hidden mb-6 bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-            <i data-lucide="map-pin" class="w-4 h-4 text-amber-400"></i> Terminal Zone Overview
-          </h2>
-          <span class="text-[11px] text-slate-500">Tap zone to filter</span>
-        </div>
-
-        <!-- Terminal Interactive Zone Schematic -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-          <button onclick="filterByZone('West End')" class="p-3 bg-slate-950 border border-slate-800 hover:border-amber-500/50 rounded-xl text-left transition group">
-            <div class="text-amber-400 font-bold group-hover:translate-x-0.5 transition">West End Yard</div>
-            <div class="text-[10px] text-slate-400 mt-1">Buildings: #3, #4, #44</div>
-          </button>
-          <button onclick="filterByZone('Barney Yard')" class="p-3 bg-slate-950 border border-slate-800 hover:border-amber-500/50 rounded-xl text-left transition group">
-            <div class="text-amber-400 font-bold group-hover:translate-x-0.5 transition">Barney Yard</div>
-            <div class="text-[10px] text-slate-400 mt-1">Buildings: #20, #21, #22, #23, #24</div>
-          </button>
-          <button onclick="filterByZone('Coal Pier')" class="p-3 bg-slate-950 border border-slate-800 hover:border-amber-500/50 rounded-xl text-left transition group">
-            <div class="text-amber-400 font-bold group-hover:translate-x-0.5 transition">Coal Pier & Dumpers</div>
-            <div class="text-[10px] text-slate-400 mt-1">Buildings: #15, #18, #19, #25, #26</div>
-          </button>
-          <button onclick="filterByZone('Piers')" class="p-3 bg-slate-950 border border-slate-800 hover:border-amber-500/50 rounded-xl text-left transition group">
-            <div class="text-amber-400 font-bold group-hover:translate-x-0.5 transition">Pier 5 & Pier 6</div>
-            <div class="text-[10px] text-slate-400 mt-1">Buildings: #31, #32, #35, #45</div>
-          </button>
-          <button onclick="filterByZone('38th St')" class="p-3 bg-slate-950 border border-slate-800 hover:border-amber-500/50 rounded-xl text-left transition group">
-            <div class="text-amber-400 font-bold group-hover:translate-x-0.5 transition">38th Street Sector</div>
-            <div class="text-[10px] text-slate-400 mt-1">Buildings: #38 through #43</div>
-          </button>
-          <button onclick="filterByZone('Central')" class="p-3 bg-slate-950 border border-slate-800 hover:border-amber-500/50 rounded-xl text-left transition group">
-            <div class="text-amber-400 font-bold group-hover:translate-x-0.5 transition">Central Shops</div>
-            <div class="text-[10px] text-slate-400 mt-1">Buildings: #5-#13, #28</div>
-          </button>
-        </div>
-      </div>
-
-      <!-- BUILDING LIST / CARDS CONTAINER -->
-      <div id="building-container" class="grid grid-cols-1 gap-3">
-        <!-- Cards loaded dynamically -->
-      </div>
-
-      <!-- EMPTY SEARCH STATE -->
-      <div id="empty-state" class="hidden text-center py-16 px-4">
-        <div class="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto mb-4 text-slate-500">
-          <i data-lucide="search-x" class="w-8 h-8 text-amber-500/60"></i>
-        </div>
-        <h3 class="text-base font-bold text-slate-200">No facilities found</h3>
-        <p class="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
-          We couldn't find any building matching your search query. Try entering a building number (1 to 45).
-        </p>
-        <button id="btn-reset-search" class="mt-4 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-xl text-xs font-semibold transition border border-slate-700">
-          Reset All Filters
+        <button onclick="closeDetailsModal()" class="text-slate-400 hover:text-white p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
         </button>
       </div>
-    </main>
 
-    <!-- NUMERIC KEYPAD DRAWER MODAL -->
-    <div id="numpad-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex flex-col justify-end transition-opacity duration-200">
-      <div class="bg-slate-900 border-t border-slate-800 rounded-t-3xl p-5 max-w-md mx-auto w-full shadow-2xl safe-bottom">
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center space-x-2">
-            <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400">
-              <i data-lucide="calculator" class="w-5 h-5"></i>
-            </div>
-            <div>
-              <h3 class="font-bold text-sm text-white">Quick Number Dial</h3>
-              <p class="text-xs text-slate-400">Tap digits for fast glove-on lookup</p>
-            </div>
-          </div>
-          <button id="btn-close-numpad" class="p-2 text-slate-400 hover:text-white rounded-full">
-            <i data-lucide="x" class="w-6 h-6"></i>
-          </button>
-        </div>
+      <!-- Modal Body -->
+      <div class="p-5 overflow-y-auto space-y-5 text-sm">
 
-        <!-- KEYPAD DISPLAY -->
-        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-4 text-center">
-          <div id="numpad-display" class="text-4xl font-extrabold tracking-widest text-amber-400 font-mono min-h-[48px] flex items-center justify-center">
-            _
+        <!-- Phone & Quick Actions -->
+        <div class="bg-slate-950/60 rounded-xl p-4 border border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div>
+            <div class="text-xs text-slate-400 font-medium">Direct Telephone Number</div>
+            <div id="modal-building-phone" class="text-lg font-mono font-bold text-white tracking-wide">446-XXXX</div>
           </div>
-          <div id="numpad-match-preview" class="text-xs text-slate-400 mt-1 truncate h-4">
-            Enter building # (1 - 45)
+          <div class="flex items-center space-x-2 w-full sm:w-auto">
+            <a id="modal-phone-link" href="#" class="flex-1 sm:flex-none text-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-2 shadow">
+              <i class="fa-solid fa-phone"></i> Call Now
+            </a>
+            <button id="modal-bookmark-btn" onclick="" class="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-bold text-xs border border-slate-700">
+              <i class="fa-solid fa-bookmark"></i>
+            </button>
           </div>
         </div>
 
-        <!-- KEYPAD GRID -->
-        <div class="grid grid-cols-3 gap-2 text-xl font-bold text-white mb-3">
-          <button class="num-btn h-14 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/80 active:bg-amber-500 active:text-slate-950 transition flex items-center justify-center">1</button>
-          <button class="num-btn h-14 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/80 active:bg-amber-500 active:text-slate-950 transition flex items-center justify-center">2</button>
-          <button class="num-btn h-14 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/80 active:bg-amber-500 active:text-slate-950 transition flex items-center justify-center">3</button>
-          <button class="num-btn h-14 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/80 active:bg-amber-500 active:text-slate-950 transition flex items-center justify-center">4</button>
-          <button class="num-btn h-14 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/80 active:bg-amber-500 active:text-slate-950 transition flex items-center justify-center">5</button>
-          <button class="num-btn h-14 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/80 active:bg-amber-500 active:text-slate-950 transition flex items-center justify-center">6</button>
-          <button class="num-btn h-14 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/80 active:bg-amber-500 active:text-slate-950 transition flex items-center justify-center">7</button>
-          <button class="num-btn h-14 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/80 active:bg-amber-500 active:text-slate-950 transition flex items-center justify-center">8</button>
-          <button class="num-btn h-14 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/80 active:bg-amber-500 active:text-slate-950 transition flex items-center justify-center">9</button>
-          <button id="numpad-clear" class="h-14 rounded-xl bg-red-950/40 text-red-400 hover:bg-red-900/40 border border-red-900/50 text-sm font-semibold flex items-center justify-center">CLEAR</button>
-          <button class="num-btn h-14 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/80 active:bg-amber-500 active:text-slate-950 transition flex items-center justify-center">0</button>
-          <button id="numpad-backspace" class="h-14 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 flex items-center justify-center">
-            <i data-lucide="delete" class="w-6 h-6"></i>
-          </button>
-        </div>
-
-        <button id="numpad-go" class="w-full py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-base shadow-lg shadow-amber-500/20 active:scale-[0.99] transition">
-          View Facility Details
-        </button>
-      </div>
-    </div>
-
-    <!-- BUILDING DETAIL MODAL -->
-    <div id="detail-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex flex-col justify-end md:justify-center p-0 md:p-4">
-      <div class="bg-slate-900 border-t md:border border-slate-800 rounded-t-3xl md:rounded-3xl p-5 max-w-lg mx-auto w-full shadow-2xl max-h-[90vh] flex flex-col safe-bottom">
-        
-        <!-- Modal Header -->
-        <div class="flex items-start justify-between pb-3 border-b border-slate-800">
-          <div class="flex items-center space-x-3">
-            <div id="modal-badge" class="w-12 h-12 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-black text-2xl shadow-lg shadow-amber-500/20">
-              #--
-            </div>
-            <div>
-              <h2 id="modal-title" class="font-bold text-lg text-white leading-tight">Facility Name</h2>
-              <span id="modal-category" class="inline-block mt-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                Category
-              </span>
-            </div>
+        <!-- Interactive Aerial Satellite Map Card -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-earth-americas"></i> Lamberts Point Aerial Satellite Map
+            </h3>
+            <span id="modal-coordinates-text" class="text-xs font-mono text-slate-400">Lat: --, Lng: --</span>
           </div>
-          <button id="btn-close-detail" class="p-2 text-slate-400 hover:text-white rounded-full">
-            <i data-lucide="x" class="w-6 h-6"></i>
-          </button>
-        </div>
-
-        <!-- Modal Body (Scrollable) -->
-        <div class="flex-1 overflow-y-auto py-4 space-y-4 pr-1 text-sm">
           
-          <!-- Quick Reference Specs Grid -->
-          <div class="grid grid-cols-3 gap-2 text-xs">
-            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-              <span class="text-slate-400 block text-[10px] uppercase tracking-wider font-bold">Terminal Sector</span>
-              <strong id="modal-sector" class="text-slate-200 text-xs mt-0.5 block truncate">West End Area</strong>
-            </div>
-            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-              <span class="text-slate-400 block text-[10px] uppercase tracking-wider font-bold">Primary Purpose</span>
-              <strong id="modal-purpose" class="text-slate-200 text-xs mt-0.5 block truncate">Operational Shop</strong>
-            </div>
-            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-              <span class="text-slate-400 block text-[10px] uppercase tracking-wider font-bold">Phone / Contact</span>
-              <div id="modal-phone-container" class="mt-0.5">
-                <a id="modal-phone-link" href="#" class="text-amber-400 hover:underline font-bold text-xs flex items-center gap-1 truncate">
-                  <i data-lucide="phone" class="w-3 h-3 shrink-0"></i>
-                  <span id="modal-phone">446-XXXX</span>
-                </a>
-              </div>
-            </div>
-          </div>
+          <!-- Leaflet Map Canvas Container -->
+          <div id="modal-map" class="building-map-container border border-slate-700 shadow-inner"></div>
 
-          <!-- Description & Operational Summary -->
-          <div>
-            <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-              <i data-lucide="info" class="w-3.5 h-3.5"></i> Operational Context
-            </h4>
-            <p id="modal-description" class="text-slate-300 leading-relaxed text-xs bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
-              Facility details and operational parameters will be loaded here.
-            </p>
-          </div>
-
-          <!-- Safety & PPE Requirements -->
-          <div>
-            <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-              <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> Required PPE & Safety Protocols
-            </h4>
-            <div id="modal-ppe" class="flex flex-wrap gap-1.5">
-              <span class="px-2 py-1 rounded-lg bg-amber-950/40 text-amber-300 border border-amber-800/50 text-[11px]">Hard Hat Required</span>
-              <span class="px-2 py-1 rounded-lg bg-amber-950/40 text-amber-300 border border-amber-800/50 text-[11px]">Safety Glasses</span>
-              <span class="px-2 py-1 rounded-lg bg-amber-950/40 text-amber-300 border border-amber-800/50 text-[11px]">Steel Toe Boots</span>
-            </div>
-          </div>
-
-          <!-- User Personal Notes (Stored in LocalStorage) -->
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
-                <i data-lucide="notebook" class="w-3.5 h-3.5 text-amber-400"></i> Field Notes (Private)
-              </h4>
-              <span id="notes-saved-toast" class="text-[10px] text-emerald-400 opacity-0 transition-opacity">Saved!</span>
-            </div>
-            <textarea 
-              id="modal-notes" 
-              rows="3" 
-              placeholder="Add field notes, contact extensions, or gate access codes here..."
-              class="w-full bg-slate-950 text-slate-200 placeholder-slate-600 text-xs rounded-xl p-3 border border-slate-800 focus:outline-none focus:border-amber-500 transition"
-            ></textarea>
+          <!-- Map Coordinates Action Bar -->
+          <div class="flex items-center gap-2 pt-1">
+            <a id="modal-gps-link" href="#" target="_blank" class="flex-1 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold flex items-center justify-center gap-2">
+              <i class="fa-solid fa-location-arrow text-amber-400"></i> Open in Maps / GPS
+            </a>
+            <button onclick="copyCoordinates()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-2">
+              <i class="fa-solid fa-copy text-amber-400"></i> Copy Lat/Lng
+            </button>
           </div>
         </div>
 
-        <!-- Modal Actions Footer -->
-        <div class="pt-3 border-t border-slate-800 flex items-center space-x-2">
-          <button id="btn-modal-fav" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold border border-slate-700 flex items-center justify-center gap-1.5 transition">
-            <i data-lucide="star" class="w-4 h-4 text-amber-400"></i>
-            <span id="modal-fav-text">Bookmark</span>
-          </button>
+        <!-- PPE & Safety Protocols -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 space-y-1">
+            <div class="text-xs font-bold text-amber-400 uppercase tracking-wide flex items-center gap-1.5">
+              <i class="fa-solid fa-hard-hat"></i> Required PPE
+            </div>
+            <p id="modal-building-ppe" class="text-xs text-slate-200 leading-relaxed font-medium">Standard Terminal Gear</p>
+          </div>
 
-          <button id="btn-modal-copy" class="flex-1 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20 active:scale-[0.98] transition">
-            <i data-lucide="copy" class="w-4 h-4"></i>
-            Copy Building Info
-          </button>
+          <div class="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 space-y-1">
+            <div class="text-xs font-bold text-rose-400 uppercase tracking-wide flex items-center gap-1.5">
+              <i class="fa-solid fa-shield-halved"></i> Safety Protocols
+            </div>
+            <p id="modal-building-protocols" class="text-xs text-slate-200 leading-relaxed font-medium">FRA Guidelines Active</p>
+          </div>
+        </div>
+
+        <!-- Custom User Notes Section -->
+        <div class="space-y-2">
+          <label for="modal-building-notes" class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-pen-to-square"></i> Building Field Notes (Saved Locally)
+          </label>
+          <textarea id="modal-building-notes" rows="3" placeholder="Add custom operational notes, radio channels, or access codes for this building..."
+                    class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500"></textarea>
+          <div class="flex justify-between items-center text-xs">
+            <span id="note-saved-status" class="text-emerald-400 font-medium opacity-0 transition-opacity"><i class="fa-solid fa-check"></i> Note Saved</span>
+            <button onclick="saveBuildingNote()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg transition">Save Note</button>
+          </div>
         </div>
 
       </div>
-    </div>
 
-    <!-- PWA INSTALL INSTRUCTIONS MODAL (iOS / Android Help) -->
-    <div id="pwa-guide-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex flex-col justify-end p-4">
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 max-w-md mx-auto w-full shadow-2xl safe-bottom">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="font-bold text-base text-white flex items-center gap-2">
-            <i data-lucide="smartphone" class="w-5 h-5 text-amber-400"></i>
-            Install Norfolk Terminal App
-          </h3>
-          <button id="btn-close-pwa-guide" class="text-slate-400 hover:text-white">
-            <i data-lucide="x" class="w-6 h-6"></i>
-          </button>
-        </div>
-        <p class="text-xs text-slate-300 leading-relaxed mb-4">
-          Add this application to your phone's Home Screen for instant offline access in the yard without cellular signal.
-        </p>
-
-        <!-- Instructions per OS -->
-        <div class="space-y-3 text-xs">
-          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-            <div class="font-bold text-amber-400 mb-1 flex items-center gap-1">
-              <i data-lucide="apple" class="w-4 h-4"></i> iPhone / iPad (Safari)
-            </div>
-            <ol class="list-decimal list-inside text-slate-400 space-y-1 text-[11px]">
-              <li>Tap the <strong class="text-white">Share</strong> button at bottom of Safari.</li>
-              <li>Scroll down and tap <strong class="text-white">Add to Home Screen</strong>.</li>
-              <li>Tap <strong class="text-white">Add</strong> in top right corner.</li>
-            </ol>
-          </div>
-
-          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-            <div class="font-bold text-amber-400 mb-1 flex items-center gap-1">
-              <i data-lucide="android" class="w-4 h-4"></i> Android (Chrome)
-            </div>
-            <ol class="list-decimal list-inside text-slate-400 space-y-1 text-[11px]">
-              <li>Tap the <strong class="text-white">Three Dots (⋮)</strong> menu in top right.</li>
-              <li>Tap <strong class="text-white">Install App</strong> or <strong class="text-white">Add to Home screen</strong>.</li>
-              <li>Confirm installation.</li>
-            </ol>
-          </div>
-        </div>
-
-        <button id="btn-dismiss-pwa" class="w-full mt-4 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs transition">
-          Got It
+      <!-- Modal Footer -->
+      <div class="px-5 py-3 bg-slate-950 border-t border-slate-800 flex justify-between items-center text-xs">
+        <button onclick="copyBuildingSummary()" class="text-slate-400 hover:text-amber-400 font-medium flex items-center gap-1.5">
+          <i class="fa-solid fa-share-nodes"></i> Copy Summary
         </button>
+        <button onclick="closeDetailsModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg">Close</button>
       </div>
-    </div>
 
-    <!-- BOTTOM TOAST NOTIFICATION -->
-    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-800 border border-amber-500/50 text-slate-100 text-xs font-semibold px-4 py-3 rounded-2xl shadow-2xl flex items-center space-x-2 translate-y-16 opacity-0 transition-all duration-300 pointer-events-none">
-      <i data-lucide="check-circle" class="w-4 h-4 text-amber-400"></i>
-      <span id="toast-message">Copied to clipboard</span>
     </div>
-
   </div>
 
-  <!-- JAVASCRIPT APP LOGIC & PWA REGISTRATION -->
+  <!-- ================= NUMERIC KEYPAD LOOKUP MODAL ================= -->
+  <div id="keypad-modal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-xs p-5 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-sm text-white">Quick Building # Dial</h3>
+        <button onclick="toggleKeypadModal()" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      
+      <!-- Keypad Display -->
+      <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-center">
+        <div id="keypad-display" class="text-2xl font-mono font-black text-amber-400 tracking-wider">--</div>
+        <div class="text-[10px] text-slate-500 mt-0.5">Enter Building # (1 - 45)</div>
+      </div>
+
+      <!-- Keypad Grid -->
+      <div class="grid grid-cols-3 gap-2">
+        <button onclick="pressKey('1')" class="py-3 bg-slate-800 hover:bg-slate-700 active:bg-amber-500 text-white font-bold rounded-xl text-lg transition">1</button>
+        <button onclick="pressKey('2')" class="py-3 bg-slate-800 hover:bg-slate-700 active:bg-amber-500 text-white font-bold rounded-xl text-lg transition">2</button>
+        <button onclick="pressKey('3')" class="py-3 bg-slate-800 hover:bg-slate-700 active:bg-amber-500 text-white font-bold rounded-xl text-lg transition">3</button>
+        <button onclick="pressKey('4')" class="py-3 bg-slate-800 hover:bg-slate-700 active:bg-amber-500 text-white font-bold rounded-xl text-lg transition">4</button>
+        <button onclick="pressKey('5')" class="py-3 bg-slate-800 hover:bg-slate-700 active:bg-amber-500 text-white font-bold rounded-xl text-lg transition">5</button>
+        <button onclick="pressKey('6')" class="py-3 bg-slate-800 hover:bg-slate-700 active:bg-amber-500 text-white font-bold rounded-xl text-lg transition">6</button>
+        <button onclick="pressKey('7')" class="py-3 bg-slate-800 hover:bg-slate-700 active:bg-amber-500 text-white font-bold rounded-xl text-lg transition">7</button>
+        <button onclick="pressKey('8')" class="py-3 bg-slate-800 hover:bg-slate-700 active:bg-amber-500 text-white font-bold rounded-xl text-lg transition">8</button>
+        <button onclick="pressKey('9')" class="py-3 bg-slate-800 hover:bg-slate-700 active:bg-amber-500 text-white font-bold rounded-xl text-lg transition">9</button>
+        <button onclick="clearKeypad()" class="py-3 bg-rose-900/40 hover:bg-rose-800 text-rose-300 font-bold rounded-xl text-xs transition">CLEAR</button>
+        <button onclick="pressKey('0')" class="py-3 bg-slate-800 hover:bg-slate-700 active:bg-amber-500 text-white font-bold rounded-xl text-lg transition">0</button>
+        <button onclick="submitKeypad()" class="py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl text-xs transition">GO</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Box -->
+  <div id="toast-msg" class="fixed bottom-4 right-4 z-50 hidden bg-amber-500 text-slate-950 px-4 py-2.5 rounded-xl font-bold text-xs shadow-xl items-center gap-2">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="toast-text">Notification</span>
+  </div>
+
+  <!-- ================= COMPLETE 45-BUILDING DATA & JAVASCRIPT LOGIC ================= -->
   <script>
-    // -------------------------------------------------------------------
-    // MASTER DATASET: 45 NORFOLK TERMINAL BUILDINGS & FACILITY DETAILS
-    // -------------------------------------------------------------------
-    const BUILDINGS_DATA = [
-      { id: 1, name: "Superintendent's Office Building", category: "Administration & Headquarters", sector: "Central Admin Sector", phone: "446-5427", ppe: ["Standard Terminal Attire"], desc: "Primary administrative headquarters for Norfolk Terminal operations, dispatch management, and division leadership." },
-      { id: 2, name: "MW&S Headquarters (REA)", category: "Administration & Headquarters", sector: "Central Admin Sector", phone: "446-5412", ppe: ["Hard Hat", "Safety Glasses", "High-Vis Vest"], desc: "Maintenance of Way & Structures headquarters. Manages track inspection, bridge maintenance, and structural engineering crews." },
-      { id: 3, name: "West End Yard Office", category: "Yard Operations & Towers", sector: "West End Yard", phone: "446-5525", ppe: ["Hard Hat", "Steel Toe Boots", "High-Vis Vest"], desc: "Field dispatch office governing train movement, crew callings, and switching assignments for the West End rail yard." },
-      { id: 4, name: "West End Tower", category: "Yard Operations & Towers", sector: "West End Yard", phone: "446-5525", ppe: ["Hard Hat", "Steel Toe Boots", "High-Vis Vest"], desc: "Elevated control tower overseeing West End interlocking switches, car routing, and train movements." },
-      { id: 5, name: "Diesel Shop", category: "Mechanical & Equipment Shops", sector: "Central Shops", phone: "446-5485", ppe: ["Hard Hat", "Steel Toe Boots", "Hearing Protection", "Eye Protection"], desc: "Heavy locomotive maintenance facility equipped with overhead cranes, drop tables, and fueling bays." },
-      { id: 6, name: "Oil House", category: "Storage, Oil Houses & Utilities", sector: "Central Shops", phone: "446-5465", ppe: ["Hard Hat", "Respirator/Mask", "Chemical Gloves", "Steel Toe Boots"], desc: "Bulk lubricant, oil storage, and distribution hub for terminal mechanical equipment and locomotives." },
-      { id: 7, name: "Roadway Equipment Shop", category: "Mechanical & Equipment Shops", sector: "Central Shops", phone: "N/A", ppe: ["Hard Hat", "Steel Toe Boots", "Eye Protection"], desc: "Maintenance facility for track tampers, ballast regulators, tie replacers, and MOW highway vehicles." },
-      { id: 8, name: "Wastewater Treatment Building", category: "Storage, Oil Houses & Utilities", sector: "Environmental / Utilities", phone: "446-5486", ppe: ["Hard Hat", "Chemical Apron/Gloves", "Eye Protection"], desc: "Industrial runoff and oil-water separator treatment plant processing terminal wash water and environmental drainage." },
-      { id: 9, name: "C&S Storage Facility", category: "Storage, Oil Houses & Utilities", sector: "Central Storage", phone: "446-5435", ppe: ["Hard Hat", "Steel Toe Boots"], desc: "Communications & Signals warehouse housing relays, crossing gates, signal heads, and fiber network components." },
-      { id: 10, name: "Carpenter Shop", category: "Mechanical & Equipment Shops", sector: "Central Shops", phone: "446-5486", ppe: ["Hard Hat", "Hearing Protection", "Eye Protection"], desc: "Woodworking and structural timber shop supporting pier decking, wooden trestles, and facility repairs." },
-      { id: 11, name: "Paint Shop", category: "Mechanical & Equipment Shops", sector: "Central Shops", phone: "446-5576", ppe: ["Respirator", "Eye Protection", "Chemical Suit"], desc: "Industrial spray booth and paint application shop for equipment, signs, and structural steel corrosion protection." },
-      { id: 12, name: "Welding Shop", category: "Mechanical & Equipment Shops", sector: "Central Shops", phone: "446-5486", ppe: ["Welding Helmet", "Leather Gloves", "Steel Toe Boots", "Hearing Protection"], desc: "Heavy fabrication and rail welding shop handling frog repairs, structural steel, and custom metalwork." },
-      { id: 13, name: "Tin Shop", category: "Mechanical & Equipment Shops", sector: "Central Shops", phone: "446-5486", ppe: ["Cut-Resistant Gloves", "Eye Protection", "Steel Toe Boots"], desc: "Sheet metal fabrication and ductwork shop for facility HVAC, locomotive cabs, and custom enclosures." },
-      { id: 14, name: "Line Gang Quonset Hut", category: "Maintenance of Way & Field Gangs", sector: "Field Operations", phone: "446-5486", ppe: ["Electrical PPE", "Hard Hat", "High-Vis Vest"], desc: "Base of operations for electrical overhead line crews, catenary repair, and high-voltage substation maintenance teams." },
-      { id: 15, name: "Coal Pier Mechanical Shop (86)", category: "Mechanical & Equipment Shops", sector: "Coal Pier Area", phone: "446-5486", ppe: ["Hard Hat", "Steel Toe Boots", "Hearing Protection"], desc: "Dedicated mechanical shop servicing Coal Pier conveyor systems, rotary dumpers, and chute loaders." },
-      { id: 16, name: "Henley's Barn (Equipment Storage)", category: "Storage, Oil Houses & Utilities", sector: "South Storage Zone", phone: "446-5486", ppe: ["Hard Hat", "Steel Toe Boots"], desc: "Covered storage barn for heavy track machinery, off-season equipment, and bulk MOW materials." },
-      { id: 17, name: "Substation", category: "Storage, Oil Houses & Utilities", sector: "Terminal Utilities", phone: "446-5486", ppe: ["High Voltage Arc Flash Suit", "Hard Hat", "Insulated Gloves"], desc: "Main terminal electrical substation converting utility power for pier machinery, yard lighting, and shops." },
-      { id: 18, name: "Piermaster's Office and Scales", category: "Administration & Headquarters", sector: "Coal Pier Area", phone: "446-5535", ppe: ["Hard Hat", "High-Vis Vest", "Steel Toe Boots"], desc: "Operational center for vessel loading coordination, coal weight certified scales, and maritime shipping logs." },
-      { id: 19, name: "Pent House", category: "Coal Pier & Barney Yard Infrastructure", sector: "Coal Pier Infrastructure", phone: "446-5450", ppe: ["Hard Hat", "Harness/Fall Protection", "Steel Toe Boots"], desc: "Elevated drive housing atop the coal conveyor structure containing main drive motors and cable drums." },
-      { id: 20, name: "South Barney Yard Tower", category: "Yard Operations & Towers", sector: "Barney Yard", phone: "446-5454", ppe: ["Hard Hat", "High-Vis Vest", "Steel Toe Boots"], desc: "Operational control tower managing southern car-pusher (barney) operations and thaw shed feeding." },
-      { id: 21, name: "North Barney Yard Tower", category: "Yard Operations & Towers", sector: "Barney Yard", phone: "446-5543", ppe: ["Hard Hat", "High-Vis Vest", "Steel Toe Boots"], desc: "Control tower supervising northern barney yard sorting tracks and conveyor feeder positioning." },
-      { id: 22, name: "Barney Yard Meeting Room", category: "Administration & Headquarters", sector: "Barney Yard", phone: "446-3022", ppe: ["Standard Terminal Attire"], desc: "Crew briefing facility, safety room, and shift change assembly hall for Barney Yard operations." },
-      { id: 23, name: "South Thaw Shed", category: "Coal Pier & Barney Yard Infrastructure", sector: "Barney Yard", phone: "446-5486", ppe: ["Hard Hat", "Heat-Resistant Gear", "Eye Protection"], desc: "Infrared gas heating shed designed to thaw frozen coal in hopper cars during winter operations prior to dumping." },
-      { id: 24, name: "North Thaw Shed", category: "Coal Pier & Barney Yard Infrastructure", sector: "Barney Yard", phone: "446-5486", ppe: ["Hard Hat", "Heat-Resistant Gear", "Eye Protection"], desc: "Northern infrared thaw facility providing high-volume rail car heating in cold weather conditions." },
-      { id: 25, name: "Dumper Structure", category: "Coal Pier & Barney Yard Infrastructure", sector: "Coal Pier Area", phone: "446-5438 (5350)", ppe: ["Hard Hat", "Hearing Protection", "Respirator", "Fall Protection"], desc: "Heavy tandem rotary car dumper that rotates coal hopper cars to unload coal onto pier transfer belts." },
-      { id: 26, name: "Coal Sampler Building", category: "Coal Pier & Barney Yard Infrastructure", sector: "Coal Pier Area", phone: "446-5486", ppe: ["Hard Hat", "Dust Mask", "Eye Protection"], desc: "Automated mechanical sampling facility extracting quality test samples from coal streams during transfer." },
-      { id: 27, name: "BC House", category: "Coal Pier & Barney Yard Infrastructure", sector: "Coal Pier Area", phone: "446-5486", ppe: ["Hard Hat", "Steel Toe Boots", "Hearing Protection"], desc: "Barney Conveyor junction house containing transfer chutes, belt tensioners, and speed controls." },
-      { id: 28, name: "Pipe Fitter's Building", category: "Mechanical & Equipment Shops", sector: "Central Shops", phone: "446-5486", ppe: ["Hard Hat", "Steel Toe Boots", "Eye Protection"], desc: "Shop facility for terminal plumbing, steam thaw lines, hydraulic piping, and pneumatic system repairs." },
-      { id: 29, name: "Maintenance Gang Building", category: "Maintenance of Way & Field Gangs", sector: "Central Facilities", phone: "446-5553", ppe: ["Hard Hat", "High-Vis Vest", "Steel Toe Boots"], desc: "HQ for terminal track maintenance gangs, turnout repair crews, and rail inspection teams." },
-      { id: 30, name: "Cable Shed", category: "Storage, Oil Houses & Utilities", sector: "Central Storage", phone: "446-5486", ppe: ["Hard Hat", "Steel Toe Boots"], desc: "Storage facility housing high-voltage trailing cables, steel wire rope reels, and conveyor belting spares." },
-      { id: 31, name: "Pier 5 Oil House", category: "Storage, Oil Houses & Utilities", sector: "Pier 5 Sector", phone: "446-5486", ppe: ["Hard Hat", "Chemical Gloves", "Steel Toe Boots"], desc: "Dedicated lube and hydraulic oil supply station servicing Pier 5 mechanical machinery." },
-      { id: 32, name: "Pier Parts Storage (White Elephant)", category: "Storage, Oil Houses & Utilities", sector: "Pier Storage Zone", phone: "446-5486", ppe: ["Hard Hat", "Steel Toe Boots"], desc: "Large central warehouse storing heavy spare gearboxes, conveyor rollers, marine loading arms, and large castings." },
-      { id: 33, name: "Lamp House", category: "Storage, Oil Houses & Utilities", sector: "Central Utilities", phone: "446-5486", ppe: ["Hard Hat", "Steel Toe Boots"], desc: "Historical and active storage facility for yard lanterns, safety flares, locomotive headlights, and portable lighting." },
-      { id: 34, name: "Silos", category: "Coal Pier & Barney Yard Infrastructure", sector: "Coal Pier Area", phone: "446-5486", ppe: ["Hard Hat", "Dust Mask", "Fall Protection"], desc: "Vertical storage silos for surge capacity and blending of specific coal grades during ship loading." },
-      { id: 35, name: "Pier 6 Pump House", category: "Coal Pier & Barney Yard Infrastructure", sector: "Pier 6 Sector", phone: "446-5486", ppe: ["Hard Hat", "Hearing Protection", "Steel Toe Boots"], desc: "High-capacity water pumping station for Pier 6 dust suppression sprays and fire protection loops." },
-      { id: 36, name: "TC Room", category: "Yard Operations & Towers", sector: "Operations Control", phone: "446-5486", ppe: ["Standard Terminal Attire"], desc: "Train Control & Telecommunications room housing vital interlocking electronics and dispatch servers." },
-      { id: 37, name: "East End Trainman's Shack", category: "Yard Operations & Towers", sector: "East End Yard", phone: "446-5558", ppe: ["Hard Hat", "High-Vis Vest", "Steel Toe Boots"], desc: "Field breakroom and reporting station for trainmen and conductors working East End yard switches." },
-      { id: 38, name: "38th St Office Building", category: "Administration & Headquarters", sector: "38th St Sector", phone: "446-5576", ppe: ["Standard Terminal Attire"], desc: "Administrative and field management offices for the 38th Street rail car repair complex." },
-      { id: 39, name: "38th St Pad House", category: "Storage, Oil Houses & Utilities", sector: "38th St Sector", phone: "446-5576", ppe: ["Hard Hat", "Steel Toe Boots"], desc: "Storage and preparation building for rail car journal pads, brake shoes, and truck components." },
-      { id: 40, name: "38th St Oil House", category: "Storage, Oil Houses & Utilities", sector: "38th St Sector", phone: "446-5576", ppe: ["Hard Hat", "Chemical Gloves", "Steel Toe Boots"], desc: "Lubricant and solvent supply house for the 38th Street car repair tracks." },
-      { id: 41, name: "38th St Repair Building", category: "Mechanical & Equipment Shops", sector: "38th St Sector", phone: "446-5576", ppe: ["Hard Hat", "Steel Toe Boots", "Eye Protection", "Hearing Protection"], desc: "Major freight car repair facility performing wheel replacements, air brake tests, and coupler overhauls." },
-      { id: 42, name: "38th St Air Building", category: "Storage, Oil Houses & Utilities", sector: "38th St Sector", phone: "446-5576", ppe: ["Hard Hat", "Hearing Protection", "Steel Toe Boots"], desc: "Compressor house producing high-pressure yard air for train brake charging and pneumatic shop tools." },
-      { id: 43, name: "38th St Maintenance Gang", category: "Maintenance of Way & Field Gangs", sector: "38th St Sector", phone: "446-5576", ppe: ["Hard Hat", "High-Vis Vest", "Steel Toe Boots"], desc: "Track and switch maintenance crew building servicing the 38th Street yard ladder tracks." },
-      { id: 44, name: "West End Barney Yard Carman's Shack", category: "Yard Operations & Towers", sector: "West End Yard", phone: "446-5576", ppe: ["Hard Hat", "High-Vis Vest", "Steel Toe Boots"], desc: "Field inspector shack for carmen conducting safety inspections on inbound coal trains." },
-      { id: 45, name: "Pier 6 Oil House", category: "Storage, Oil Houses & Utilities", sector: "Pier 6 Sector", phone: "446-5486", ppe: ["Hard Hat", "Chemical Gloves", "Steel Toe Boots"], desc: "Dedicated oil and fluid storage facility servicing Pier 6 ship loaders and conveyor drives." }
+    /**
+     * Complete 45-Building Directory Array for Norfolk Terminal / Lamberts Point Rail Yard.
+     * All entries include exact id, name, zone, phone, PPE, safety protocols, and lat/lng coordinates.
+     * Edit lat, lng, ppe, or protocols directly in this array anytime!
+     */
+    const buildings = [
+      {
+        id: "1",
+        name: "Superintendent's Office Building",
+        zone: "Administration & Headquarters",
+        phone: "446-5427",
+        ppe: "Safety glasses, high-vis vest in yard areas",
+        protocols: "Visitor check-in at main lobby desk required.",
+        lat: 36.8745506,
+        lng: -76.3071662
+      },
+      {
+        id: "2",
+        name: "MW&S Headquarters (REA)",
+        zone: "Administration & Headquarters",
+        phone: "446-5412",
+        ppe: "Hard hat, safety glasses, steel-toe boots, high-vis vest",
+        protocols: "Maintenance of Way clearance protocol active.",
+        lat: 36.8747478,
+        lng: -76.3083879
+      },
+      {
+        id: "3",
+        name: "West End Yard Office",
+        zone: "Yard Operations & Towers",
+        phone: "446-5525",
+        ppe: "Hard hat, steel-toe boots, high-vis vest",
+        protocols: "Radio check-in on Yard Ch 1 prior to entering tracks.",
+        lat: 36.8755382,
+        lng: -76.3109564
+      },
+      {
+        id: "4",
+        name: "West End Tower",
+        zone: "Yard Operations & Towers",
+        phone: "446-5525",
+        ppe: "Hard hat, safety glasses, high-vis vest",
+        protocols: "Restricted entry. Three-point contact on tower stairways.",
+        lat: 36.87633,
+        lng: -76.31110
+      },
+      {
+        id: "5",
+        name: "Diesel Shop",
+        zone: "Mechanical & Equipment Shops",
+        phone: "446-5485",
+        ppe: "Hard hat, safety glasses, steel-toe boots, hearing protection, high-vis vest",
+        protocols: "Blue Signal protection rules strictly enforced inside pit area.",
+        lat: 36.87374,
+        lng: -76.31639
+      },
+      {
+        id: "6",
+        name: "Oil House",
+        zone: "Storage, Oil Houses & Utilities",
+        phone: "446-5465",
+        ppe: "Safety glasses, chemical resistant gloves, steel-toe boots",
+        protocols: "No open flames. Spill containment kit location marked.",
+        lat: 36.87418,
+        lng: -76.31476
+      },
+      {
+        id: "7",
+        name: "Roadway Equipment Shop",
+        zone: "Mechanical & Equipment Shops",
+        phone: "N/A",
+        ppe: "Hard hat, steel-toe boots, safety glasses, high-vis vest",
+        protocols: "Heavy equipment movement area. Maintain eye contact with operators.",
+        lat: 36.8805,
+        lng: -76.3212
+      },
+      {
+        id: "8",
+        name: "Wastewater Treatment Building",
+        zone: "Storage, Oil Houses & Utilities",
+        phone: "446-5486",
+        ppe: "Safety glasses, nitrile gloves, steel-toe boots",
+        protocols: "Hazmat awareness zone. Maintain active ventilation.",
+        lat: 36.87589,
+        lng: -76.32348
+      },
+      {
+        id: "9",
+        name: "C&S Storage Facility",
+        zone: "Storage, Oil Houses & Utilities",
+        phone: "446-5435",
+        ppe: "Hard hat, safety glasses, steel-toe boots",
+        protocols: "Communications & Signals inventory sign-out required.",
+        lat: 36.87593,
+        lng: -76.32768
+      },
+      {
+        id: "10",
+        name: "Carpenter Shop",
+        zone: "Mechanical & Equipment Shops",
+        phone: "446-5486",
+        ppe: "Eye protection, hearing protection, steel-toe boots",
+        protocols: "Dust collection system must be operational during cutting.",
+        lat: 36.87551,
+        lng: -76.32756
+      },
+      {
+        id: "11",
+        name: "Paint Shop",
+        zone: "Mechanical & Equipment Shops",
+        phone: "446-5576",
+        ppe: "Respirator, eye protection, chemical suits",
+        protocols: "Explosion-proof fixtures zone. Proper grounding required.",
+        lat: 36.8803,
+        lng: -76.3245
+      },
+      {
+        id: "12",
+        name: "Welding Shop",
+        zone: "Mechanical & Equipment Shops",
+        phone: "446-5486",
+        ppe: "Welding helmet, leather gloves, steel-toe boots, fire retardant jacket",
+        protocols: "Hot Work Permit required before torch or arc welding.",
+        lat: 36.8800,
+        lng: -76.3238
+      },
+      {
+        id: "13",
+        name: "Tin Shop",
+        zone: "Mechanical & Equipment Shops",
+        phone: "446-5486",
+        ppe: "Cut-resistant gloves, safety glasses, steel-toe boots",
+        protocols: "Sheet metal handling safety standards active.",
+        lat: 36.8804,
+        lng: -76.3242
+      },
+      {
+        id: "14",
+        name: "Line Gang Quonset Hut",
+        zone: "Maintenance of Way (MW&S) & Field Gangs",
+        phone: "446-5486",
+        ppe: "Hard hat, high-vis vest, electrical hazard boots",
+        protocols: "High voltage awareness. Verify clearance with Dispatch.",
+        lat: 36.8792,
+        lng: -76.3185
+      },
+      {
+        id: "15",
+        name: "Coal Pier Mechanical Shop(86)",
+        zone: "Mechanical & Equipment Shops",
+        phone: "446-5486",
+        ppe: "Hard hat, safety glasses, metatarsal boots, high-vis vest",
+        protocols: "Coal Pier 6 machinery lockout/tagout procedure active.",
+        lat: 36.87673,
+        lng: -76.32627
+      },
+      {
+        id: "16",
+        name: "Henley's Barn (Equipment Storage)",
+        zone: "Storage, Oil Houses & Utilities",
+        phone: "446-5486",
+        ppe: "Hard hat, safety glasses, steel-toe boots",
+        protocols: "Keep clear of overhead crane path when operating.",
+        lat: 36.8810,
+        lng: -76.3190
+      },
+      {
+        id: "17",
+        name: "Substation",
+        zone: "Storage, Oil Houses & Utilities",
+        phone: "446-5486",
+        ppe: "Arc flash suit/shield, dielectric footwear",
+        protocols: "Authorized electrical personnel only. No metal objects.",
+        lat: 36.8780,
+        lng: -76.3280
+      },
+      {
+        id: "18",
+        name: "Piermaster's Office and Scales",
+        zone: "Administration & Headquarters",
+        phone: "446-5535",
+        ppe: "Hard hat, safety glasses, high-vis vest",
+        protocols: "Scale track clearance protocol before vehicle crossing.",
+        lat: 36.87820,
+        lng: -76.32203
+      },
+      {
+        id: "19",
+        name: "Pent House",
+        zone: "Coal Pier & Barney Yard Infrastructure",
+        phone: "446-5450",
+        ppe: "Hard hat, full body harness, steel-toe boots",
+        protocols: "Fall protection required on elevated structure.",
+        lat: 36.8752,
+        lng: -76.3330
+      },
+      {
+        id: "20",
+        name: "South Barney Yard Tower",
+        zone: "Yard Operations & Towers",
+        phone: "446-5454",
+        ppe: "Hard hat, safety glasses, high-vis vest",
+        protocols: "Maintain 3-point contact on access ladders.",
+        lat: 36.87812,
+        lng: -76.32035
+      },
+      {
+        id: "21",
+        name: "North Barney Yard Tower",
+        zone: "Yard Operations & Towers",
+        phone: "446-5543",
+        ppe: "Hard hat, safety glasses, high-vis vest",
+        protocols: "Maintain radio communication with Barney Yard pushers.",
+        lat: 36.87873,
+        lng: -76.32050
+      },
+      {
+        id: "22",
+        name: "Barney Yard Meeting Room",
+        zone: "Administration & Headquarters",
+        phone: "446-3022",
+        ppe: "Standard business attire / safety glasses in yard",
+        protocols: "Safety briefing location for Barney Yard personnel.",
+        lat: 36.87804,
+        lng: -76.32029
+      },
+      {
+        id: "23",
+        name: "South Thaw Shed",
+        zone: "Coal Pier & Barney Yard Infrastructure",
+        phone: "446-5486",
+        ppe: "Hard hat, heat resistant gloves, safety glasses",
+        protocols: "High temperature hazard during winter operation.",
+        lat: 36.87794,
+        lng: -76.32325
+      },
+      {
+        id: "24",
+        name: "North Thaw Shed",
+        zone: "Coal Pier & Barney Yard Infrastructure",
+        phone: "446-5486",
+        ppe: "Hard hat, heat resistant gloves, safety glasses",
+        protocols: "Infrared heater clearance guidelines active.",
+        lat: 36.87809,
+        lng: -76.32324
+      },
+      {
+        id: "25",
+        name: "Dumper Structure",
+        zone: "Coal Pier & Barney Yard Infrastructure",
+        phone: "446-5438",
+        ppe: "Hard hat, safety glasses, respirator (dust), steel-toe boots",
+        protocols: "Rotary dumper active rotation zone. Lockout required.",
+        lat: 36.87770,
+        lng: -76.32527
+      },
+      {
+        id: "26",
+        name: "Coal Sampler Building",
+        zone: "Coal Pier & Barney Yard Infrastructure",
+        phone: "446-5486",
+        ppe: "Hard hat, safety glasses, dust mask, steel-toe boots",
+        protocols: "Conveyor machinery pinch points. Maintain guards.",
+        lat: 36.8753,
+        lng: -76.3318
+      },
+      {
+        id: "27",
+        name: "BC House",
+        zone: "Coal Pier & Barney Yard Infrastructure",
+        phone: "446-5486",
+        ppe: "Hard hat, safety glasses, high-vis vest",
+        protocols: "Barney Conveyor control room protocol.",
+        lat: 36.8758,
+        lng: -76.3305
+      },
+      {
+        id: "28",
+        name: "Pipe Fitter's Building",
+        zone: "Mechanical & Equipment Shops",
+        phone: "446-5486",
+        ppe: "Hard hat, safety glasses, leather work gloves, steel-toe boots",
+        protocols: "Pressure testing safety zone.",
+        lat: 36.8806,
+        lng: -76.3230
+      },
+      {
+        id: "29",
+        name: "Maintenance Gang Building",
+        zone: "Maintenance of Way (MW&S) & Field Gangs",
+        phone: "446-5553",
+        ppe: "Hard hat, high-vis vest, steel-toe boots with metatarsals",
+        protocols: "Track safety Job Safety Briefing (JSB) mandatory.",
+        lat: 36.8795,
+        lng: -76.3198
+      },
+      {
+        id: "30",
+        name: "Cable Shed",
+        zone: "Storage, Oil Houses & Utilities",
+        phone: "446-5486",
+        ppe: "Hard hat, heavy duty work gloves, steel-toe boots",
+        protocols: "Heavy wire spool handling safety guidelines.",
+        lat: 36.8814,
+        lng: -76.3200
+      },
+      {
+        id: "31",
+        name: "Pier 5 Oil House",
+        zone: "Storage, Oil Houses & Utilities",
+        phone: "446-5486",
+        ppe: "Safety glasses, chemical resistant gloves, steel-toe boots",
+        protocols: "Marine environment oil storage. Flammable rules.",
+        lat: 36.8735,
+        lng: -76.3340
+      },
+      {
+        id: "32",
+        name: "Pier Parts Storage (White Elephant)",
+        zone: "Storage, Oil Houses & Utilities",
+        phone: "446-5486",
+        ppe: "Hard hat, safety glasses, steel-toe boots",
+        protocols: "Forklift traffic area. High visibility required.",
+        lat: 36.8765,
+        lng: -76.3285
+      },
+      {
+        id: "33",
+        name: "Lamp House",
+        zone: "Storage, Oil Houses & Utilities",
+        phone: "446-5486",
+        ppe: "Safety glasses, steel-toe boots",
+        protocols: "Battery charging station ventilation active.",
+        lat: 36.8782,
+        lng: -76.3215
+      },
+      {
+        id: "34",
+        name: "Silos",
+        zone: "Coal Pier & Barney Yard Infrastructure",
+        phone: "446-5486",
+        ppe: "Hard hat, safety glasses, dust respirator, harness if climbing",
+        protocols: "Confined space entry permit required for silo interior.",
+        lat: 36.87921,
+        lng: -76.32436
+      },
+      {
+        id: "35",
+        name: "Pier 6 Pump House",
+        zone: "Coal Pier & Barney Yard Infrastructure",
+        phone: "446-5486",
+        ppe: "Safety glasses, hearing protection, steel-toe boots",
+        protocols: "High pressure water system. Lockout before maintenance.",
+        lat: 36.8748,
+        lng: -76.3335
+      },
+      {
+        id: "36",
+        name: "TC Room",
+        zone: "Yard Operations & Towers",
+        phone: "446-5486",
+        ppe: "Safety glasses, ESD ground wristbands for sensitive gear",
+        protocols: "Train Control electronics facility. Authorized C&S only.",
+        lat: 36.8776,
+        lng: -76.3225
+      },
+      {
+        id: "37",
+        name: "East End Trainman's Shack",
+        zone: "Yard Operations & Towers",
+        phone: "446-5558",
+        ppe: "Hard hat, high-vis vest, steel-toe boots",
+        protocols: "Train crew crew-change safety point.",
+        lat: 36.87615,
+        lng: -76.32541
+      },
+      {
+        id: "38",
+        name: "38th St Office Building",
+        zone: "Administration & Headquarters",
+        phone: "446-5576",
+        ppe: "Safety glasses when entering adjacent yard",
+        protocols: "38th Street yard perimeter check-in.",
+        lat: 36.87900,
+        lng: -76.31324
+      },
+      {
+        id: "39",
+        name: "38th St Pad House",
+        zone: "Storage, Oil Houses & Utilities",
+        phone: "446-5576",
+        ppe: "Hard hat, safety glasses, steel-toe boots",
+        protocols: "Car department pad storage guidelines.",
+        lat: 36.8838,
+        lng: -76.3135
+      },
+      {
+        id: "40",
+        name: "38th St Oil House",
+        zone: "Storage, Oil Houses & Utilities",
+        phone: "446-5576",
+        ppe: "Safety glasses, nitrile gloves, steel-toe boots",
+        protocols: "No smoking / flame zone. Secondary containment.",
+        lat: 36.8840,
+        lng: -76.3140
+      },
+      {
+        id: "41",
+        name: "38th St Repair Building",
+        zone: "Mechanical & Equipment Shops",
+        phone: "446-5576",
+        ppe: "Hard hat, safety glasses, metatarsal boots, hearing protection",
+        protocols: "Freight car repair track safety protection active.",
+        lat: 36.87878,
+        lng: -76.31361
+      },
+      {
+        id: "42",
+        name: "38th St Air Building",
+        zone: "Storage, Oil Houses & Utilities",
+        phone: "446-5576",
+        ppe: "Safety glasses, hearing protection, steel-toe boots",
+        protocols: "High pressure pneumatic line safety.",
+        lat: 36.8839,
+        lng: -76.3128
+      },
+      {
+        id: "43",
+        name: "38th St Maintenance Gang",
+        zone: "Maintenance of Way (MW&S) & Field Gangs",
+        phone: "446-5576",
+        ppe: "Hard hat, high-vis vest, steel-toe boots",
+        protocols: "Roadway worker protection rules enforced.",
+        lat: 36.8845,
+        lng: -76.3120
+      },
+      {
+        id: "44",
+        name: "West End Barney Yard Carman's Shack",
+        zone: "Yard Operations & Towers",
+        phone: "446-5576",
+        ppe: "Hard hat, safety glasses, high-vis vest, steel-toe boots",
+        protocols: "Car inspection blue flag protection active.",
+        lat: 36.8770,
+        lng: -76.3265
+      },
+      {
+        id: "45",
+        name: "Pier 6 Oil House",
+        zone: "Storage, Oil Houses & Utilities",
+        phone: "446-5486",
+        ppe: "Safety glasses, chemical resistant gloves, steel-toe boots",
+        protocols: "Pier 6 lube oil storage spill response guidelines.",
+        lat: 36.8742,
+        lng: -76.3320
+      }
     ];
 
-    const CATEGORIES = [
-      "All Facilities",
-      "Administration & Headquarters",
-      "Yard Operations & Towers",
-      "Mechanical & Equipment Shops",
-      "Coal Pier & Barney Yard Infrastructure",
-      "Maintenance of Way & Field Gangs",
-      "Storage, Oil Houses & Utilities"
-    ];
+    // State Variables
+    let activeCategory = "All";
+    let showBookmarksOnly = false;
+    let selectedBuilding = null;
+    let leafletMapInstance = null;
+    let currentMarker = null;
+    let keypadBuffer = "";
 
-    // -------------------------------------------------------------------
-    // APP STATE MANAGEMENT
-    // -------------------------------------------------------------------
-    let state = {
-      searchQuery: "",
-      activeCategory: "All Facilities",
-      activeZoneFilter: null,
-      onlyFavorites: false,
-      viewMode: "grid", // "grid" | "compact" | "map"
-      favorites: JSON.parse(localStorage.getItem("nt_directory_favs") || "[]"),
-      notes: JSON.parse(localStorage.getItem("nt_directory_notes") || "{}"),
-      numpadValue: "",
-      selectedBuildingId: null
-    };
+    // Local Storage Keys
+    const BOOKMARKS_KEY = "norfolk_terminal_bookmarks";
+    const NOTES_KEY_PREFIX = "norfolk_terminal_note_";
 
-    // -------------------------------------------------------------------
-    // INITIALIZATION & DOM REFERENCES
-    // -------------------------------------------------------------------
-    document.addEventListener("DOMContentLoaded", () => {
-      initServiceWorker();
-      renderCategoryTabs();
-      setupEventListeners();
-      renderApp();
-      lucide.createIcons();
-    });
+    // Load saved bookmarks from Local Storage
+    function getBookmarks() {
+      return JSON.parse(localStorage.getItem(BOOKMARKS_KEY) || "[]");
+    }
 
-    const searchInput = document.getElementById("search-input");
-    const btnClearSearch = document.getElementById("btn-clear-search");
-    const categoryTabsContainer = document.getElementById("category-tabs");
-    const buildingContainer = document.getElementById("building-container");
-    const mapContainer = document.getElementById("map-view-container");
-    const emptyState = document.getElementById("empty-state");
-    const resultsCountEl = document.getElementById("results-count");
-    const favCountLabel = document.getElementById("fav-count-label");
+    function isBookmarked(id) {
+      return getBookmarks().includes(id);
+    }
 
-    // Modal elements
-    const detailModal = document.getElementById("detail-modal");
-    const numpadModal = document.getElementById("numpad-modal");
-    const pwaGuideModal = document.getElementById("pwa-guide-modal");
-    const toast = document.getElementById("toast");
+    function toggleBookmark(id, event) {
+      if(event) event.stopPropagation();
+      let bookmarks = getBookmarks();
+      if (bookmarks.includes(id)) {
+        bookmarks = bookmarks.filter(b => b !== id);
+        showToast("Removed from Saved Buildings");
+      } else {
+        bookmarks.push(id);
+        showToast("Saved Building to Bookmarks");
+      }
+      localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks));
+      renderGrid();
+      if(selectedBuilding && selectedBuilding.id === id) {
+        updateModalBookmarkButton(id);
+      }
+    }
 
-    // -------------------------------------------------------------------
-    // CATEGORY TABS RENDER
-    // -------------------------------------------------------------------
-    function renderCategoryTabs() {
-      categoryTabsContainer.innerHTML = CATEGORIES.map(cat => {
-        const isActive = state.activeCategory === cat;
-        const badgeText = cat === "All Facilities" ? "45" : getCategoryCount(cat);
+    // Initialize Category Filters
+    function initCategories() {
+      const zones = ["All", ...new Set(buildings.map(b => b.zone))];
+      const container = document.getElementById("category-pills");
+      container.innerHTML = zones.map(zone => {
+        const isActive = zone === activeCategory;
         return `
-          <button 
-            onclick="selectCategory('${cat.replace(/'/g, "\\'")}')"
-            class="whitespace-nowrap flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-              isActive 
-                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-bold' 
-                : 'bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-800'
-            }"
-          >
-            <span>${cat}</span>
-            <span class="px-1.5 py-0.2 rounded-full text-[10px] ${isActive ? 'bg-slate-950/20 text-slate-950 font-extrabold' : 'bg-slate-800 text-slate-400'}">
-              ${badgeText}
-            </span>
+          <button onclick="setCategory('${zone}')" 
+                  class="px-3 py-1.5 rounded-lg whitespace-nowrap transition border ${
+                    isActive 
+                      ? 'bg-amber-500 text-slate-950 border-amber-500 font-bold shadow' 
+                      : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700'
+                  }">
+            ${zone}
           </button>
         `;
       }).join('');
     }
 
-    function getCategoryCount(catName) {
-      return BUILDINGS_DATA.filter(b => b.category === catName).length;
+    function setCategory(cat) {
+      activeCategory = cat;
+      initCategories();
+      renderGrid();
     }
 
-    function selectCategory(catName) {
-      state.activeCategory = catName;
-      state.activeZoneFilter = null;
-      renderCategoryTabs();
-      renderApp();
-    }
-
-    function filterByZone(zoneKey) {
-      state.activeZoneFilter = zoneKey;
-      renderApp();
-      showToast(`Filtered by zone: ${zoneKey}`);
-    }
-
-    // -------------------------------------------------------------------
-    // MAIN FILTERING LOGIC
-    // -------------------------------------------------------------------
-    function getFilteredBuildings() {
-      return BUILDINGS_DATA.filter(building => {
-        // Query search
-        const query = state.searchQuery.toLowerCase().trim();
-        const matchesQuery = !query || 
-          building.id.toString() === query ||
-          building.id.toString().padStart(2, '0') === query ||
-          building.name.toLowerCase().includes(query) ||
-          building.category.toLowerCase().includes(query) ||
-          building.sector.toLowerCase().includes(query) ||
-          (building.phone && building.phone.toLowerCase().includes(query)) ||
-          building.desc.toLowerCase().includes(query);
-
-        // Category tab filter
-        const matchesCategory = state.activeCategory === "All Facilities" || building.category === state.activeCategory;
-
-        // Zone diagram filter
-        const matchesZone = !state.activeZoneFilter || building.sector.toLowerCase().includes(state.activeZoneFilter.toLowerCase()) || building.name.toLowerCase().includes(state.activeZoneFilter.toLowerCase());
-
-        // Favorites toggle filter
-        const matchesFav = !state.onlyFavorites || state.favorites.includes(building.id);
-
-        return matchesQuery && matchesCategory && matchesZone && matchesFav;
-      });
-    }
-
-    // -------------------------------------------------------------------
-    // RENDER MAIN CARDS / LIST
-    // -------------------------------------------------------------------
-    function renderApp() {
-      const filtered = getFilteredBuildings();
-
-      // Update counters
-      resultsCountEl.textContent = `Showing ${filtered.length} of ${BUILDINGS_DATA.length} facilities`;
-      favCountLabel.textContent = `Favorites (${state.favorites.length})`;
-
-      // Show/Hide Map View
-      if (state.viewMode === 'map') {
-        mapContainer.classList.remove('hidden');
+    function toggleBookmarksFilter() {
+      showBookmarksOnly = !showBookmarksOnly;
+      const btn = document.getElementById("bookmark-filter-btn");
+      if(showBookmarksOnly) {
+        btn.classList.add("bg-amber-500", "text-slate-950");
+        btn.classList.remove("bg-slate-800", "text-slate-300");
       } else {
-        mapContainer.classList.add('hidden');
+        btn.classList.remove("bg-amber-500", "text-slate-950");
+        btn.classList.add("bg-slate-800", "text-slate-300");
       }
+      renderGrid();
+    }
 
-      // Empty State
-      if (filtered.length === 0) {
-        buildingContainer.innerHTML = '';
-        emptyState.classList.remove('hidden');
+    // Render Main Building Grid
+    function renderGrid() {
+      const query = document.getElementById("search-input").value.toLowerCase().trim();
+      const grid = document.getElementById("buildings-grid");
+      const emptyState = document.getElementById("empty-state");
+      const bookmarks = getBookmarks();
+
+      const filtered = buildings.filter(b => {
+        const matchesCategory = activeCategory === "All" || b.zone === activeCategory;
+        const matchesSearch = b.id.includes(query) || 
+                              b.name.toLowerCase().includes(query) || 
+                              b.zone.toLowerCase().includes(query) || 
+                              b.phone.toLowerCase().includes(query);
+        const matchesBookmark = !showBookmarksOnly || bookmarks.includes(b.id);
+        return matchesCategory && matchesSearch && matchesBookmark;
+      });
+
+      document.getElementById("results-count").textContent = `Showing ${filtered.length} of ${buildings.length} Buildings`;
+
+      if(filtered.length === 0) {
+        grid.innerHTML = "";
+        emptyState.classList.remove("hidden");
+        emptyState.classList.add("flex");
         return;
-      } else {
-        emptyState.classList.add('hidden');
       }
 
-      // Grid vs Compact Layout
-      if (state.viewMode === 'compact') {
-        buildingContainer.className = "grid grid-cols-1 gap-2";
-        buildingContainer.innerHTML = filtered.map(b => renderCompactRow(b)).join('');
-      } else {
-        buildingContainer.className = "grid grid-cols-1 sm:grid-cols-2 gap-3";
-        buildingContainer.innerHTML = filtered.map(b => renderCard(b)).join('');
-      }
+      emptyState.classList.add("hidden");
+      emptyState.classList.remove("flex");
 
-      lucide.createIcons();
-    }
-
-    function renderCard(b) {
-      const isFav = state.favorites.includes(b.id);
-      const hasNotes = !!state.notes[b.id];
-
-      return `
-        <div class="bg-slate-900 border border-slate-800/90 hover:border-amber-500/40 rounded-2xl p-4 transition-all duration-200 shadow-lg flex flex-col justify-between group relative overflow-hidden">
-          <div class="flex items-start justify-between gap-3 mb-2">
+      grid.innerHTML = filtered.map(b => {
+        const bookmarked = bookmarks.includes(b.id);
+        const hasNotes = !!localStorage.getItem(NOTES_KEY_PREFIX + b.id);
+        
+        return `
+          <div onclick="openDetailsModal('${b.id}')" 
+               class="bg-slate-900 border border-slate-800 hover:border-amber-500/50 rounded-xl p-4 transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg flex flex-col justify-between group relative">
             
-            <!-- Building Number Badge -->
-            <div onclick="openBuildingDetail(${b.id})" class="cursor-pointer flex items-center space-x-3">
-              <div class="w-11 h-11 rounded-xl bg-slate-950 border border-slate-800 text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 flex items-center justify-center font-black text-xl shadow-inner transition-colors duration-200">
-                ${b.id}
+            <div class="space-y-3">
+              <div class="flex items-start justify-between gap-2">
+                <div class="flex items-center space-x-3">
+                  <div class="w-9 h-9 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 font-black text-sm flex items-center justify-center shrink-0 group-hover:bg-amber-500 group-hover:text-slate-950 transition">
+                    #${b.id}
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-sm text-white group-hover:text-amber-400 transition leading-snug">${b.name}</h3>
+                    <p class="text-[11px] text-slate-400 mt-0.5">${b.zone}</p>
+                  </div>
+                </div>
+
+                <button onclick="toggleBookmark('${b.id}', event)" class="text-slate-600 hover:text-amber-400 p-1 text-sm">
+                  <i class="fa-${bookmarked ? 'solid' : 'regular'} fa-bookmark ${bookmarked ? 'text-amber-400' : ''}"></i>
+                </button>
               </div>
-              <div>
-                <h3 class="font-bold text-sm text-slate-100 group-hover:text-amber-400 transition leading-snug">
-                  ${highlightMatch(b.name, state.searchQuery)}
-                </h3>
-                <span class="text-[10px] text-slate-400 font-medium block mt-0.5">${b.sector}</span>
+
+              <!-- Key Metrics Pill -->
+              <div class="flex items-center gap-2 text-xs text-slate-300 pt-1">
+                <div class="bg-slate-950 px-2.5 py-1 rounded-md border border-slate-800 font-mono text-amber-400 flex items-center gap-1.5">
+                  <i class="fa-solid fa-phone text-[10px]"></i> ${b.phone}
+                </div>
+                ${hasNotes ? `<span class="bg-slate-800 text-amber-300 px-2 py-0.5 rounded text-[10px] font-semibold"><i class="fa-solid fa-note-sticky mr-1"></i>Note</span>` : ''}
               </div>
             </div>
 
-            <!-- Favorite Star Button -->
-            <button onclick="toggleFavorite(${b.id}, event)" class="p-1.5 text-slate-500 hover:text-amber-400 transition">
-              <i data-lucide="star" class="w-5 h-5 ${isFav ? 'fill-amber-400 text-amber-400' : ''}"></i>
-            </button>
-          </div>
-
-          <p class="text-xs text-slate-400 line-clamp-2 mt-1 mb-3 leading-relaxed">
-            ${b.desc}
-          </p>
-
-          <div class="pt-2 border-t border-slate-800/70 flex items-center justify-between text-xs">
-            <span class="text-[10px] font-semibold text-slate-400 truncate max-w-[60%]">
-              ${b.category}
-            </span>
-
-            <div class="flex items-center space-x-1.5">
-              ${hasNotes ? '<i data-lucide="notebook" class="w-3.5 h-3.5 text-amber-400" title="Has field note"></i>' : ''}
-              
-              <!-- Quick Copy Button -->
-              <button onclick="copyBuildingSummary(${b.id}, event)" title="Copy Building Details" class="p-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition">
-                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-              </button>
-
-              <!-- View Details Button -->
-              <button onclick="openBuildingDetail(${b.id})" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-200 text-[11px] font-bold transition border border-slate-700/80">
-                Details
-              </button>
+            <!-- Card Bottom Bar -->
+            <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+              <span class="flex items-center gap-1 text-[11px]"><i class="fa-solid fa-satellite text-amber-400"></i> ${b.lat.toFixed(4)}, ${b.lng.toFixed(4)}</span>
+              <span class="text-amber-400 font-bold group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                Details & Map <i class="fa-solid fa-chevron-right text-[10px]"></i>
+              </span>
             </div>
+
           </div>
-        </div>
-      `;
+        `;
+      }).join('');
     }
 
-    function renderCompactRow(b) {
-      const isFav = state.favorites.includes(b.id);
-      return `
-        <div onclick="openBuildingDetail(${b.id})" class="bg-slate-900 border border-slate-800/80 hover:border-amber-500/50 rounded-xl p-3 flex items-center justify-between transition cursor-pointer group">
-          <div class="flex items-center space-x-3">
-            <div class="w-9 h-9 rounded-lg bg-slate-950 text-amber-400 font-extrabold text-base flex items-center justify-center border border-slate-800">
-              #${b.id}
-            </div>
-            <div>
-              <h3 class="font-bold text-xs text-slate-200 group-hover:text-amber-400 transition">${b.name}</h3>
-              <p class="text-[10px] text-slate-400">${b.category}</p>
-            </div>
-          </div>
-
-          <div class="flex items-center space-x-2">
-            <button onclick="toggleFavorite(${b.id}, event)" class="p-1 text-slate-500 hover:text-amber-400">
-              <i data-lucide="star" class="w-4 h-4 ${isFav ? 'fill-amber-400 text-amber-400' : ''}"></i>
-            </button>
-            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-600 group-hover:text-slate-300"></i>
-          </div>
-        </div>
-      `;
-    }
-
-    function highlightMatch(text, query) {
-      if (!query || query.trim() === "") return text;
-      const regex = new RegExp(`(${escapeRegExp(query)})`, 'gi');
-      return text.replace(regex, `<mark class="bg-amber-500/30 text-amber-300 rounded px-0.5">$1</mark>`);
-    }
-
-    function escapeRegExp(string) {
-      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
-
-    // -------------------------------------------------------------------
-    // FAVORITES & STORAGE
-    // -------------------------------------------------------------------
-    function toggleFavorite(id, e) {
-      if (e) e.stopPropagation();
-      const idx = state.favorites.indexOf(id);
-      if (idx > -1) {
-        state.favorites.splice(idx, 1);
-        showToast(`Removed #${id} from favorites`);
+    // Search Box Listener
+    document.getElementById("search-input").addEventListener("input", (e) => {
+      const clearBtn = document.getElementById("clear-search-btn");
+      if(e.target.value.length > 0) {
+        clearBtn.classList.remove("hidden");
       } else {
-        state.favorites.push(id);
-        showToast(`Added #${id} to favorites`);
+        clearBtn.classList.add("hidden");
       }
-      localStorage.setItem("nt_directory_favs", JSON.stringify(state.favorites));
-      renderApp();
+      renderGrid();
+    });
+
+    function clearSearch() {
+      const input = document.getElementById("search-input");
+      input.value = "";
+      document.getElementById("clear-search-btn").classList.add("hidden");
+      renderGrid();
     }
 
-    // -------------------------------------------------------------------
-    // DETAIL MODAL LOGIC
-    // -------------------------------------------------------------------
-    function openBuildingDetail(id) {
-      const b = BUILDINGS_DATA.find(item => item.id === id);
-      if (!b) return;
+    function resetFilters() {
+      activeCategory = "All";
+      showBookmarksOnly = false;
+      document.getElementById("search-input").value = "";
+      document.getElementById("bookmark-filter-btn").classList.remove("bg-amber-500", "text-slate-950");
+      document.getElementById("bookmark-filter-btn").classList.add("bg-slate-800", "text-slate-300");
+      initCategories();
+      renderGrid();
+    }
 
-      state.selectedBuildingId = id;
+    // ================= DETAILS MODAL & LEAFLET AERIAL MAP =================
+    function openDetailsModal(id) {
+      const b = buildings.find(item => item.id === id);
+      if(!b) return;
+
+      selectedBuilding = b;
+      document.getElementById("modal-building-badge").textContent = `#${b.id}`;
+      document.getElementById("modal-building-name").textContent = b.name;
+      document.getElementById("modal-building-zone").textContent = b.zone;
+      document.getElementById("modal-building-phone").textContent = b.phone;
       
-      document.getElementById("modal-badge").textContent = `#${b.id}`;
-      document.getElementById("modal-title").textContent = b.name;
-      document.getElementById("modal-category").textContent = b.category;
-      document.getElementById("modal-sector").textContent = b.sector;
-      document.getElementById("modal-purpose").textContent = b.category.split("&")[0];
-      document.getElementById("modal-description").textContent = b.desc;
-
-      // Phone link handler
-      const phoneEl = document.getElementById("modal-phone");
       const phoneLink = document.getElementById("modal-phone-link");
-      if (b.phone && b.phone !== "NA" && b.phone !== "N/A") {
-        phoneEl.textContent = b.phone;
-        const cleanDigits = b.phone.split(' ')[0].replace(/[^0-9]/g, '');
-        phoneLink.href = `tel:${cleanDigits}`;
-        phoneLink.classList.remove("pointer-events-none", "text-slate-500");
-        phoneLink.classList.add("text-amber-400", "hover:underline");
+      if(b.phone !== "N/A") {
+        phoneLink.href = `tel:${b.phone.replace(/[^0-9]/g, '')}`;
+        phoneLink.classList.remove("opacity-50", "pointer-events-none");
       } else {
-        phoneEl.textContent = "N/A";
         phoneLink.href = "#";
-        phoneLink.classList.add("pointer-events-none", "text-slate-500");
-        phoneLink.classList.remove("text-amber-400", "hover:underline");
+        phoneLink.classList.add("opacity-50", "pointer-events-none");
       }
 
-      // PPE tags
-      const ppeContainer = document.getElementById("modal-ppe");
-      ppeContainer.innerHTML = b.ppe.map(item => `
-        <span class="px-2 py-1 rounded-lg bg-amber-950/40 text-amber-300 border border-amber-800/50 text-[11px] font-medium flex items-center gap-1">
-          <i data-lucide="check" class="w-3 h-3 text-amber-400"></i> ${item}
-        </span>
-      `).join('');
+      document.getElementById("modal-building-ppe").textContent = b.ppe;
+      document.getElementById("modal-building-protocols").textContent = b.protocols;
+      document.getElementById("modal-coordinates-text").textContent = `Lat: ${b.lat.toFixed(5)}, Lng: ${b.lng.toFixed(5)}`;
 
-      // Notes
-      const notesInput = document.getElementById("modal-notes");
-      notesInput.value = state.notes[b.id] || "";
+      // Update GPS Maps Link
+      document.getElementById("modal-gps-link").href = `https://www.google.com/maps/search/?api=1&query=${b.lat},${b.lng}`;
 
-      // Fav button state in modal
-      updateModalFavBtn(b.id);
+      // Load Saved Local Notes
+      const savedNote = localStorage.getItem(NOTES_KEY_PREFIX + b.id) || "";
+      document.getElementById("modal-building-notes").value = savedNote;
 
-      detailModal.classList.remove("hidden");
-      lucide.createIcons();
+      updateModalBookmarkButton(b.id);
+
+      // Display Modal
+      const modal = document.getElementById("details-modal");
+      modal.classList.remove("hidden");
+      document.body.style.overflow = "hidden";
+
+      // Render or Update Aerial Satellite Leaflet Map
+      initOrUpdateMap(b.lat, b.lng, b.id, b.name);
     }
 
-    function updateModalFavBtn(id) {
-      const isFav = state.favorites.includes(id);
-      const favText = document.getElementById("modal-fav-text");
-      favText.textContent = isFav ? "Favorited" : "Bookmark";
+    function updateModalBookmarkButton(id) {
+      const btn = document.getElementById("modal-bookmark-btn");
+      const bookmarked = isBookmarked(id);
+      btn.onclick = () => toggleBookmark(id);
+      btn.innerHTML = `<i class="fa-${bookmarked ? 'solid' : 'regular'} fa-bookmark ${bookmarked ? 'text-amber-400' : ''}"></i>`;
     }
 
-    // Auto-save notes on input
-    document.getElementById("modal-notes").addEventListener("input", (e) => {
-      if (!state.selectedBuildingId) return;
-      state.notes[state.selectedBuildingId] = e.target.value;
-      localStorage.setItem("nt_directory_notes", JSON.stringify(state.notes));
-      
-      const savedToast = document.getElementById("notes-saved-toast");
-      savedToast.classList.remove("opacity-0");
-      setTimeout(() => savedToast.classList.add("opacity-0"), 1200);
-    });
-
-    document.getElementById("btn-modal-fav").addEventListener("click", () => {
-      if (state.selectedBuildingId) {
-        toggleFavorite(state.selectedBuildingId);
-        updateModalFavBtn(state.selectedBuildingId);
-      }
-    });
-
-    document.getElementById("btn-modal-copy").addEventListener("click", () => {
-      if (state.selectedBuildingId) {
-        copyBuildingSummary(state.selectedBuildingId);
-      }
-    });
-
-    document.getElementById("btn-close-detail").addEventListener("click", () => {
-      detailModal.classList.add("hidden");
-    });
-
-    // -------------------------------------------------------------------
-    // NUMPAD DRAWER LOGIC
-    // -------------------------------------------------------------------
-    const numpadDisplay = document.getElementById("numpad-display");
-    const numpadMatchPreview = document.getElementById("numpad-match-preview");
-
-    document.getElementById("btn-open-numpad").addEventListener("click", () => {
-      state.numpadValue = "";
-      updateNumpadDisplay();
-      numpadModal.classList.remove("hidden");
-    });
-
-    document.getElementById("btn-close-numpad").addEventListener("click", () => {
-      numpadModal.classList.add("hidden");
-    });
-
-    document.querySelectorAll(".num-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        if (state.numpadValue.length < 2) {
-          state.numpadValue += btn.textContent.trim();
-          updateNumpadDisplay();
-        }
-      });
-    });
-
-    document.getElementById("numpad-clear").addEventListener("click", () => {
-      state.numpadValue = "";
-      updateNumpadDisplay();
-    });
-
-    document.getElementById("numpad-backspace").addEventListener("click", () => {
-      state.numpadValue = state.numpadValue.slice(0, -1);
-      updateNumpadDisplay();
-    });
-
-    function updateNumpadDisplay() {
-      numpadDisplay.textContent = state.numpadValue || "_";
-      const num = parseInt(state.numpadValue, 10);
-      const match = BUILDINGS_DATA.find(b => b.id === num);
-
-      if (match) {
-        numpadMatchPreview.textContent = `Found: #${match.id} - ${match.name}`;
-        numpadMatchPreview.className = "text-xs text-amber-400 font-bold truncate h-4";
-      } else if (state.numpadValue.length > 0) {
-        numpadMatchPreview.textContent = `No building #${state.numpadValue} (Valid 1-45)`;
-        numpadMatchPreview.className = "text-xs text-red-400 font-medium truncate h-4";
-      } else {
-        numpadMatchPreview.textContent = "Enter building # (1 - 45)";
-        numpadMatchPreview.className = "text-xs text-slate-400 truncate h-4";
-      }
+    function closeDetailsModal() {
+      document.getElementById("details-modal").classList.add("hidden");
+      document.body.style.overflow = "";
+      selectedBuilding = null;
     }
 
-    document.getElementById("numpad-go").addEventListener("click", () => {
-      const num = parseInt(state.numpadValue, 10);
-      const match = BUILDINGS_DATA.find(b => b.id === num);
-      if (match) {
-        numpadModal.classList.add("hidden");
-        openBuildingDetail(match.id);
-      } else if (state.numpadValue) {
-        // filter search bar by digit
-        searchInput.value = state.numpadValue;
-        state.searchQuery = state.numpadValue;
-        numpadModal.classList.add("hidden");
-        renderApp();
-      }
-    });
+    // Leaflet Aerial Satellite Map Initialization
+    function initOrUpdateMap(lat, lng, bId, bName) {
+      setTimeout(() => {
+        if (!leafletMapInstance) {
+          // Initialize Leaflet Map
+          leafletMapInstance = L.map('modal-map', {
+            zoomControl: true,
+            attributionControl: false
+          }).setView([lat, lng], 17);
 
-    // -------------------------------------------------------------------
-    // EVENT LISTENERS & SEARCH
-    // -------------------------------------------------------------------
-    function setupEventListeners() {
-      // Realtime search
-      searchInput.addEventListener("input", (e) => {
-        state.searchQuery = e.target.value;
-        if (state.searchQuery) {
-          btnClearSearch.classList.remove("hidden");
+          // Esri World Imagery Satellite Tile Layer
+          L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 19,
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+          }).addTo(leafletMapInstance);
+
         } else {
-          btnClearSearch.classList.add("hidden");
+          leafletMapInstance.setView([lat, lng], 17);
         }
-        renderApp();
-      });
 
-      btnClearSearch.addEventListener("click", () => {
-        searchInput.value = "";
-        state.searchQuery = "";
-        btnClearSearch.classList.add("hidden");
-        renderApp();
-      });
+        // Trigger Leaflet resize recalculation to prevent gray tiles inside modal
+        leafletMapInstance.invalidateSize();
 
-      document.getElementById("btn-reset-search").addEventListener("click", () => {
-        searchInput.value = "";
-        state.searchQuery = "";
-        state.activeCategory = "All Facilities";
-        state.activeZoneFilter = null;
-        state.onlyFavorites = false;
-        btnClearSearch.classList.add("hidden");
-        renderCategoryTabs();
-        renderApp();
-      });
-
-      // Favorites toggle filter
-      document.getElementById("btn-filter-favorites").addEventListener("click", () => {
-        state.onlyFavorites = !state.onlyFavorites;
-        showToast(state.onlyFavorites ? "Showing Favorites Only" : "Showing All Facilities");
-        renderApp();
-      });
-
-      // Toggle layout modes (Grid -> Compact -> Map)
-      const btnToggleView = document.getElementById("btn-toggle-view");
-      const viewIcon = document.getElementById("view-icon");
-
-      btnToggleView.addEventListener("click", () => {
-        if (state.viewMode === "grid") {
-          state.viewMode = "compact";
-          viewIcon.setAttribute("data-lucide", "list");
-          showToast("Switched to Compact List View");
-        } else if (state.viewMode === "compact") {
-          state.viewMode = "map";
-          viewIcon.setAttribute("data-lucide", "map");
-          showToast("Switched to Terminal Map View");
-        } else {
-          state.viewMode = "grid";
-          viewIcon.setAttribute("data-lucide", "layout-grid");
-          showToast("Switched to Grid View");
+        // Clear existing marker
+        if (currentMarker) {
+          leafletMapInstance.removeLayer(currentMarker);
         }
-        renderApp();
-      });
+
+        // Custom HTML Badge Marker
+        const customBadgeIcon = L.divIcon({
+          className: 'custom-leaflet-marker',
+          html: `<div class="custom-leaflet-badge">Bldg #${bId}</div>`,
+          iconSize: [80, 24],
+          iconAnchor: [40, 12]
+        });
+
+        // Add Marker to Map
+        currentMarker = L.marker([lat, lng], { icon: customBadgeIcon })
+          .addTo(leafletMapInstance)
+          .bindPopup(`<b>Building #${bId}</b><br>${bName}`)
+          .openPopup();
+
+      }, 150);
     }
 
-    // -------------------------------------------------------------------
-    // COPY TO CLIPBOARD HELPER
-    // -------------------------------------------------------------------
-    function copyBuildingSummary(id, e) {
-      if (e) e.stopPropagation();
-      const b = BUILDINGS_DATA.find(item => item.id === id);
-      if (!b) return;
+    // Copy Coordinates Action
+    function copyCoordinates() {
+      if(!selectedBuilding) return;
+      const text = `${selectedBuilding.lat}, ${selectedBuilding.lng}`;
+      copyToClipboard(text, "Coordinates copied to clipboard!");
+    }
 
-      const summaryText = `Building #${b.id}: ${b.name}\nPhone: ${b.phone || 'N/A'}\nCategory: ${b.category}\nSector: ${b.sector}\nDetails: ${b.desc}`;
+    // Copy Building Summary
+    function copyBuildingSummary() {
+      if(!selectedBuilding) return;
+      const summary = `Norfolk Terminal Building #${selectedBuilding.id} - ${selectedBuilding.name}
+Zone: ${selectedBuilding.zone}
+Phone: ${selectedBuilding.phone}
+Coordinates: ${selectedBuilding.lat}, ${selectedBuilding.lng}
+PPE: ${selectedBuilding.ppe}
+Protocols: ${selectedBuilding.protocols}`;
+
+      copyToClipboard(summary, "Building summary copied!");
+    }
+
+    // Save Note to Local Storage
+    function saveBuildingNote() {
+      if(!selectedBuilding) return;
+      const note = document.getElementById("modal-building-notes").value;
+      localStorage.setItem(NOTES_KEY_PREFIX + selectedBuilding.id, note);
       
-      // Fallback copy for iframe security environment
-      const textarea = document.createElement('textarea');
-      textarea.value = summaryText;
+      const status = document.getElementById("note-saved-status");
+      status.classList.remove("opacity-0");
+      setTimeout(() => status.classList.add("opacity-0"), 2000);
+      renderGrid();
+    }
+
+    // Clipboard Helper
+    function copyToClipboard(text, successMsg) {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
       document.body.appendChild(textarea);
       textarea.select();
       try {
-        document.execCommand('copy');
-        showToast(`Copied #${b.id} info to clipboard`);
+        document.execCommand("copy");
+        showToast(successMsg);
       } catch (err) {
-        showToast(`Failed to copy`);
+        showToast("Failed to copy");
       }
       document.body.removeChild(textarea);
     }
 
-    function showToast(msg) {
-      const toastMsg = document.getElementById("toast-message");
-      toastMsg.textContent = msg;
-      toast.classList.remove("translate-y-16", "opacity-0");
+    // Toast Notification Handler
+    function showToast(text) {
+      const toast = document.getElementById("toast-msg");
+      document.getElementById("toast-text").textContent = text;
+      toast.classList.remove("hidden");
+      toast.classList.add("flex");
       setTimeout(() => {
-        toast.classList.add("translate-y-16", "opacity-0");
-      }, 2200);
+        toast.classList.add("hidden");
+        toast.classList.remove("flex");
+      }, 2500);
     }
 
-    // -------------------------------------------------------------------
-    // PWA & SERVICE WORKER INLINE SETUP
-    // -------------------------------------------------------------------
-    let deferredPrompt = null;
-    const btnPwaInstall = document.getElementById("btn-pwa-install");
+    // ================= KEYPAD MODAL LOGIC =================
+    function toggleKeypadModal() {
+      const modal = document.getElementById("keypad-modal");
+      if(modal.classList.contains("hidden")) {
+        keypadBuffer = "";
+        updateKeypadDisplay();
+        modal.classList.remove("hidden");
+      } else {
+        modal.classList.add("hidden");
+      }
+    }
 
-    function initServiceWorker() {
-      // Create Web App Manifest dynamically via Data URI
-      const manifestObj = {
-        name: "Norfolk Terminal Directory",
-        short_name: "Norfolk NT",
-        start_url: "./",
-        display: "standalone",
-        background_color: "#0f172a",
-        theme_color: "#0f172a",
-        icons: [{
-          src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%23f59e0b'><rect width='512' height='512' rx='128' fill='%230f172a'/><text x='256' y='320' font-size='160' font-weight='bold' text-anchor='middle' fill='%23f59e0b'>NT</text></svg>",
-          sizes: "512x512",
-          type: "image/svg+xml",
-          purpose: "any maskable"
-        }]
-      };
+    function pressKey(num) {
+      if(keypadBuffer.length < 2) {
+        keypadBuffer += num;
+        updateKeypadDisplay();
+      }
+    }
 
-      const manifestBlob = new Blob([JSON.stringify(manifestObj)], { type: "application/json" });
-      const manifestUrl = URL.createObjectURL(manifestBlob);
-      const manifestLink = document.createElement("link");
-      manifestLink.rel = "manifest";
-      manifestLink.href = manifestUrl;
-      document.head.appendChild(manifestLink);
+    function clearKeypad() {
+      keypadBuffer = "";
+      updateKeypadDisplay();
+    }
 
-      // Register Inline Service Worker
-      if ('serviceWorker' in navigator) {
+    function updateKeypadDisplay() {
+      document.getElementById("keypad-display").textContent = keypadBuffer || "--";
+    }
+
+    function submitKeypad() {
+      if(!keypadBuffer) return;
+      const targetId = parseInt(keypadBuffer, 10).toString();
+      toggleKeypadModal();
+      
+      const exists = buildings.find(b => b.id === targetId);
+      if(exists) {
+        openDetailsModal(targetId);
+      } else {
+        showToast(`Building #${targetId} not found`);
+      }
+    }
+
+    // Close Modals on Outer Backdrop Click
+    window.onclick = function(event) {
+      const detailsModal = document.getElementById("details-modal");
+      const keypadModal = document.getElementById("keypad-modal");
+      if (event.target === detailsModal) closeDetailsModal();
+      if (event.target === keypadModal) toggleKeypadModal();
+    };
+
+    // ================= PWA SERVICE WORKER INJECTION =================
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
         const swCode = `
-          const CACHE_NAME = 'nt-dir-v1';
+          const CACHE_NAME = 'norfolk-terminal-v2';
           self.addEventListener('install', (e) => {
             e.waitUntil(
-              caches.open(CACHE_NAME).then((cache) => {
+              caches.open(CACHE_NAME).then(cache => {
                 return cache.addAll(['./']);
               })
             );
           });
           self.addEventListener('fetch', (e) => {
             e.respondWith(
-              caches.match(e.request).then((res) => res || fetch(e.request))
+              caches.match(e.request).then(response => response || fetch(e.request))
             );
           });
         `;
-        const swBlob = new Blob([swCode], { type: 'application/javascript' });
-        const swUrl = URL.createObjectURL(swBlob);
-        
-        navigator.serviceWorker.register(swUrl).catch(() => {
-          // SW registration silent fallback if blob unsupported in sandbox
-        });
-      }
-
-      // Listen for Android PWA Install Event
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        btnPwaInstall.classList.remove('hidden');
-      });
-
-      btnPwaInstall.addEventListener('click', () => {
-        if (deferredPrompt) {
-          deferredPrompt.prompt();
-          deferredPrompt.userChoice.then((choiceResult) => {
-            if (choiceResult.outcome === 'accepted') {
-              showToast('App installed to home screen!');
-            }
-            deferredPrompt = null;
-            btnPwaInstall.classList.add('hidden');
-          });
-        } else {
-          // Show PWA manual guide modal for iOS or non-supported
-          pwaGuideModal.classList.remove('hidden');
-        }
-      });
-
-      document.getElementById('btn-close-pwa-guide').addEventListener('click', () => {
-        pwaGuideModal.classList.add('hidden');
-      });
-      document.getElementById('btn-dismiss-pwa').addEventListener('click', () => {
-        pwaGuideModal.classList.add('hidden');
+        const blob = new Blob([swCode], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+        navigator.serviceWorker.register(swUrl).catch(() => {});
       });
     }
+
+    // Initial Load
+    initCategories();
+    renderGrid();
   </script>
 </body>
 </html>
